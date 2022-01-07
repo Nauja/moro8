@@ -1,0 +1,6 @@
+[submodule "vendor/cmocka"]
+	path = vendor/cmocka
+	url = https://git.cryptomilk.org/projects/cmocka.git
+[submodule "vendor/libfs"]
+	path = vendor/libfs
+	url = https://github.com/Nauja/libfs.git
