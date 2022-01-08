@@ -55,6 +55,24 @@ typedef struct moro8_vm moro8_vm;
 	fun(MORO8_OP_LDY_ABS) \
 	fun(MORO8_OP_LDY_ABS_X)
 
+static struct moro8_vm* _moro8_create()
+{
+	struct moro8_vm* vm = moro8_create();
+	assert_non_null(vm);
+	return vm;
+}
+
+static struct moro8_vm* _moro8_parse(struct moro8_vm* vm, const char* buf, size_t size)
+{
+	assert_non_null(moro8_parse(vm, buf, size));
+	return vm;
+}
+
+static void _moro8_equal(struct moro8_vm* left, struct moro8_vm* right)
+{
+	assert_true(moro8_equal(left, right));
+}
+
 static void _moro8_assert_memory_equal(moro8_vm* vm, const moro8_uword* buf, moro8_udword offset, moro8_udword size)
 {
 	moro8_uword value = 0;
@@ -65,6 +83,9 @@ static void _moro8_assert_memory_equal(moro8_vm* vm, const moro8_uword* buf, mor
 	}
 }
 
+#define moro8_assert_create() _moro8_create()
+#define moro8_assert_parse(vm, buf, size) _moro8_parse(vm, buf, size)
+#define moro8_assert_equal(left, right) _moro8_equal(left, right)
 #define moro8_assert_register_equal(vm, reg, value) assert_int_equal(moro8_get_register(vm, reg), value)
 #define moro8_assert_register_not_equal(vm, reg, value) assert_int_not_equal(moro8_get_register(vm, reg), value)
 #define moro8_assert_pc_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_PC), value)
@@ -83,7 +104,7 @@ static void moro8_assert_output_dir(char (*buf)[LIBFS_MAX_PATH])
 
 	fs_assert_join_path(buf, cwd, DIRECTORY_OUTPUT);
 
-	assert_true(fs_make_dir(buf));
+	assert_true(fs_make_dir(buf[0]));
 }
 
 /** Setup a new VM before running a test */

@@ -37,7 +37,10 @@ void test_func(void** initial_state) {
     // Compare expected state
     size_t size = 0;
     const char* expected = (const char*)fs_assert_read_file(state->expected, &size);
-    assert_memory_equal(expected, output, 1092);
+    moro8_vm* vm2 = moro8_assert_create();
+    moro8_assert_parse(vm2, expected, size);
+    moro8_assert_equal(vm, vm2);
+    moro8_delete(vm2);
 }
 
 int setup(void** initial_state)
@@ -50,7 +53,7 @@ int setup(void** initial_state)
     buf = fs_assert_read_file(state->input, &size);
 
     // Parse test
-    state->vm = moro8_create();
+    state->vm = moro8_assert_create();
     assert_true(moro8_parse(state->vm, buf, size));
 
     return 0;

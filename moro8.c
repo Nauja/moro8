@@ -32,12 +32,14 @@ struct moro8_vm {
 		// Program counter
 		moro8_udword pc;
 		// Accumulator: math register
-		moro8_uword a;
+		moro8_uword ac;
 		// X Y: index registers
 		moro8_uword x;
 		moro8_uword y;
-		// S: stack pointer
-		moro8_uword s;
+		// Status register
+		moro8_uword sr;
+		// Stack pointer
+		moro8_uword sp;
 
 		struct
 		{
@@ -193,10 +195,11 @@ char* moro8_print(const struct moro8_vm* vm)
 
 	char* ptr = buf;
 	ptr = moro8_print_register_dword(ptr, "PC:", vm->registers.pc);
-	ptr = moro8_print_register_word(ptr, "A: ", vm->registers.a);
+	ptr = moro8_print_register_word(ptr, "AC: ", vm->registers.ac);
 	ptr = moro8_print_register_word(ptr, "X: ", vm->registers.x);
 	ptr = moro8_print_register_word(ptr, "Y: ", vm->registers.y);
-	ptr = moro8_print_register_word(ptr, "S: ", vm->registers.s);
+	ptr = moro8_print_register_word(ptr, "SR: ", vm->registers.sr);
+	ptr = moro8_print_register_word(ptr, "SP: ", vm->registers.sp);
 	ptr = moro8_print_register_word(ptr, "N: ", vm->registers.p.n);
 	ptr = moro8_print_register_word(ptr, "V: ", vm->registers.p.v);
 	ptr = moro8_print_register_word(ptr, "Z: ", vm->registers.p.z);
@@ -305,9 +308,9 @@ struct moro8_vm* moro8_parse(struct moro8_vm* vm, const char* buf, size_t size)
 						vm->registers.pc = 0;
 						value_buffer = (moro8_uword*)&vm->registers.pc;
 					}
-					else if (buf[0] == 'A')
+					else if (buf[0] == 'A' && buf[1] == 'C')
 					{
-						value_buffer = &vm->registers.a;
+						value_buffer = &vm->registers.ac;
 					}
 					else if (buf[0] == 'X')
 					{
@@ -317,9 +320,13 @@ struct moro8_vm* moro8_parse(struct moro8_vm* vm, const char* buf, size_t size)
 					{
 						value_buffer = &vm->registers.y;
 					}
-					else if (buf[0] == 'S')
+					else if (buf[0] == 'S' && buf[1] == 'R')
 					{
-						value_buffer = &vm->registers.s;
+						value_buffer = &vm->registers.sr;
+					}
+					else if (buf[0] == 'S' && buf[1] == 'P')
+					{
+						value_buffer = &vm->registers.sp;
 					}
 					else if (buf[0] == 'N')
 					{
@@ -415,9 +422,11 @@ size_t moro8_step(moro8_vm* vm)
 #define MORO8_DWORD_OPERAND (operand + (vm->memory[++vm->registers.pc] << 8))
 /** Get a double word at a memory address */
 #define MORO8_MEMORY_DWORD(addr) ((moro8_udword)vm->memory[addr] + (((moro8_udword)vm->memory[addr + 1]) << 8))
-#define MORO8_A vm->registers.a
+#define MORO8_AC vm->registers.ac
 #define MORO8_X vm->registers.x
 #define MORO8_Y vm->registers.y
+#define MORO8_SR vm->registers.sr
+#define MORO8_SP vm->registers.sp
 #define MORO8_MEM(addr) vm->memory[addr]
 #define MORO8_MEM_ABS MORO8_MEM(MORO8_DWORD_OPERAND)
 #define MORO8_MEM_ZP MORO8_MEM(operand)
@@ -436,7 +445,7 @@ size_t moro8_step(moro8_vm* vm)
 	switch (instruction)
 	{
 	case MORO8_OP_ADDC_IMM:
-		vm->registers.a += operand;
+		vm->registers.ac += operand;
 		break;
 	case MORO8_OP_ADDC_ZP:
 	case MORO8_OP_ADDC_ZP_X:
@@ -447,10 +456,10 @@ size_t moro8_step(moro8_vm* vm)
 	case MORO8_OP_ADDC_IND_Y:
 		break;
 	case MORO8_OP_SUB:
-		vm->registers.a -= operand;
+		vm->registers.ac -= operand;
 		break;
 	case MORO8_OP_MUL:
-		vm->registers.a *= operand;
+		vm->registers.ac *= operand;
 		break;
 	case MORO8_OP_JMP_ABS:
 		vm->registers.pc = MORO8_DWORD_OPERAND - 1;
@@ -466,37 +475,37 @@ size_t moro8_step(moro8_vm* vm)
 		break;
 	case MORO8_OP_LDA_IMM:
 		// a = value #$FF
-		MORO8_A = operand;
+		MORO8_AC = operand;
 		break;
 	case MORO8_OP_LDA_ZP:
-		// a = memory at address $FF
-		MORO8_A = MORO8_MEM_ZP;
+		// ac = memory at address $FF
+		MORO8_AC = MORO8_MEM_ZP;
 		break;
 	case MORO8_OP_LDA_ZP_X:
-		// a = memory at address $FF, X
-		MORO8_A = MORO8_MEM_ZP_X;
+		// ac = memory at address $FF, X
+		MORO8_AC = MORO8_MEM_ZP_X;
 		break;
 	case MORO8_OP_LDA_ABS:
-		// a = memory at address $FFFF
-		MORO8_A = MORO8_MEM_ABS;
+		// ac = memory at address $FFFF
+		MORO8_AC = MORO8_MEM_ABS;
 		break;
 	case MORO8_OP_LDA_ABS_X:
-		// a = memory at address $FFFF, X
-		MORO8_A = MORO8_MEM_ABS_X;
+		// ac = memory at address $FFFF, X
+		MORO8_AC = MORO8_MEM_ABS_X;
 		break;
 	case MORO8_OP_LDA_ABS_Y:
-		// a = memory at address $FFFF, Y
-		MORO8_A = MORO8_MEM_ABS_Y;
+		// ac = memory at address $FFFF, Y
+		MORO8_AC = MORO8_MEM_ABS_Y;
 		break;
 	case MORO8_OP_LDA_IND_X:
 	{
-		// a = memory at address ($FF, X)
-		MORO8_A = MORO8_MEM_IND_X;
+		// ac = memory at address ($FF, X)
+		MORO8_AC = MORO8_MEM_IND_X;
 		break;
 	}
 	case MORO8_OP_LDA_IND_Y:
-		// a = memory at address ($FF), Y
-		MORO8_A = MORO8_MEM_IND_Y;
+		// ac = memory at address ($FF), Y
+		MORO8_AC = MORO8_MEM_IND_Y;
 		break;
 	case MORO8_OP_LDX_IMM:
 		MORO8_X = operand;
@@ -504,7 +513,7 @@ size_t moro8_step(moro8_vm* vm)
 	case MORO8_OP_LDX_ZP:
 		MORO8_X = MORO8_MEM_ZP;
 		break;
-	case MORO8_OP_LDX_ZP_X:
+	case MORO8_OP_LDX_ZP_Y:
 		MORO8_X = MORO8_MEM_ZP_Y;
 		break;
 	case MORO8_OP_LDX_ABS:
@@ -528,26 +537,53 @@ size_t moro8_step(moro8_vm* vm)
 	case MORO8_OP_LDY_ABS_X:
 		MORO8_Y = MORO8_MEM_ABS_X;
 		break;
+	case MORO8_OP_NOP:
+		--vm->registers.pc;
+		break;
+	case MORO8_OP_PHA:
+		--vm->registers.pc;
+		break;
+	case MORO8_OP_PLA:
+		--vm->registers.pc;
+		break;
 	case MORO8_OP_STA_ZP:
-		MORO8_MEM_ZP = MORO8_A;
+		MORO8_MEM_ZP = MORO8_AC;
 		break;
 	case MORO8_OP_STA_ZP_X:
-		MORO8_MEM_ZP_X = MORO8_A;
+		MORO8_MEM_ZP_X = MORO8_AC;
 		break;
 	case MORO8_OP_STA_ABS:
-		MORO8_MEM_ABS = MORO8_A;
+		MORO8_MEM_ABS = MORO8_AC;
 		break;
 	case MORO8_OP_STA_ABS_X:
-		MORO8_MEM_ABS_X = MORO8_A;
+		MORO8_MEM_ABS_X = MORO8_AC;
 		break;
 	case MORO8_OP_STA_ABS_Y:
-		MORO8_MEM_ABS_Y = MORO8_A;
+		MORO8_MEM_ABS_Y = MORO8_AC;
 		break;
 	case MORO8_OP_STA_IND_X:
-		MORO8_MEM_IND_X = MORO8_A;
+		MORO8_MEM_IND_X = MORO8_AC;
 		break;
 	case MORO8_OP_STA_IND_Y:
-		MORO8_MEM_IND_Y = MORO8_A;
+		MORO8_MEM_IND_Y = MORO8_AC;
+		break;
+	case MORO8_OP_STX_ZP:
+		MORO8_MEM_ZP = MORO8_X;
+		break;
+	case MORO8_OP_STX_ZP_Y:
+		MORO8_MEM_ZP_Y = MORO8_X;
+		break;
+	case MORO8_OP_STX_ABS:
+		MORO8_MEM_ABS = MORO8_X;
+		break;
+	case MORO8_OP_STY_ZP:
+		MORO8_MEM_ZP = MORO8_Y;
+		break;
+	case MORO8_OP_STY_ZP_X:
+		MORO8_MEM_ZP_X = MORO8_Y;
+		break;
+	case MORO8_OP_STY_ABS:
+		MORO8_MEM_ABS = MORO8_Y;
 		break;
 	}
 
@@ -567,14 +603,16 @@ moro8_udword moro8_get_register(const moro8_vm* vm, moro8_register reg)
 	{
 	case MORO8_REGISTER_PC:
 		return vm->registers.pc;
-	case MORO8_REGISTER_A:
-		return vm->registers.a;
+	case MORO8_REGISTER_AC:
+		return vm->registers.ac;
 	case MORO8_REGISTER_X:
 		return vm->registers.x;
 	case MORO8_REGISTER_Y:
 		return vm->registers.y;
-	case MORO8_REGISTER_S:
-		return vm->registers.s;
+	case MORO8_REGISTER_SR:
+		return vm->registers.sr;
+	case MORO8_REGISTER_SP:
+		return vm->registers.sp;
 	default:
 		return 0;
 	}
@@ -587,8 +625,8 @@ void moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_udwo
 	case MORO8_REGISTER_PC:
 		vm->registers.pc = value;
 		break;
-	case MORO8_REGISTER_A:
-		vm->registers.a = (moro8_uword)value;
+	case MORO8_REGISTER_AC:
+		vm->registers.ac = (moro8_uword)value;
 		break;
 	case MORO8_REGISTER_X:
 		vm->registers.x = (moro8_uword)value;
@@ -596,8 +634,11 @@ void moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_udwo
 	case MORO8_REGISTER_Y:
 		vm->registers.y = (moro8_uword)value;
 		break;
-	case MORO8_REGISTER_S:
-		vm->registers.s = (moro8_uword)value;
+	case MORO8_REGISTER_SR:
+		vm->registers.sr = (moro8_uword)value;
+		break;
+	case MORO8_REGISTER_SP:
+		vm->registers.sp = (moro8_uword)value;
 		break;
 	default:
 		break;
