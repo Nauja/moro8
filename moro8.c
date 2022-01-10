@@ -195,11 +195,11 @@ char* moro8_print(const struct moro8_vm* vm)
 
 	char* ptr = buf;
 	ptr = moro8_print_register_dword(ptr, "PC:", vm->registers.pc);
-	ptr = moro8_print_register_word(ptr, "AC: ", vm->registers.ac);
+	ptr = moro8_print_register_word(ptr, "AC:", vm->registers.ac);
 	ptr = moro8_print_register_word(ptr, "X: ", vm->registers.x);
 	ptr = moro8_print_register_word(ptr, "Y: ", vm->registers.y);
-	ptr = moro8_print_register_word(ptr, "SR: ", vm->registers.sr);
-	ptr = moro8_print_register_word(ptr, "SP: ", vm->registers.sp);
+	ptr = moro8_print_register_word(ptr, "SR:", vm->registers.sr);
+	ptr = moro8_print_register_word(ptr, "SP:", vm->registers.sp);
 	ptr = moro8_print_register_word(ptr, "N: ", vm->registers.p.n);
 	ptr = moro8_print_register_word(ptr, "V: ", vm->registers.p.v);
 	ptr = moro8_print_register_word(ptr, "Z: ", vm->registers.p.z);
@@ -427,15 +427,49 @@ size_t moro8_step(moro8_vm* vm)
 #define MORO8_Y vm->registers.y
 #define MORO8_SR vm->registers.sr
 #define MORO8_SP vm->registers.sp
+#define MORO8_C vm->registers.p.c
+#define MORO8_Z vm->registers.p.z
+#define MORO8_V vm->registers.p.v
+#define MORO8_N vm->registers.p.n
+#define MORO8_DEC_PC --vm->registers.pc
+#define MORO8_TWO_COMPLEMENT(value) (~result + 1)
 #define MORO8_MEM(addr) vm->memory[addr]
-#define MORO8_MEM_ABS MORO8_MEM(MORO8_DWORD_OPERAND)
 #define MORO8_MEM_ZP MORO8_MEM(operand)
 #define MORO8_MEM_ZP_X MORO8_MEM(operand + MORO8_X)
 #define MORO8_MEM_ZP_Y MORO8_MEM(operand + MORO8_Y)
+#define MORO8_MEM_ABS MORO8_MEM(MORO8_DWORD_OPERAND)
 #define MORO8_MEM_ABS_X MORO8_MEM(MORO8_DWORD_OPERAND + MORO8_X)
 #define MORO8_MEM_ABS_Y MORO8_MEM(MORO8_DWORD_OPERAND + MORO8_Y)
 #define MORO8_MEM_IND_X MORO8_MEM(MORO8_MEMORY_DWORD(operand + MORO8_X))
 #define MORO8_MEM_IND_Y MORO8_MEM(MORO8_MEMORY_DWORD(operand) + MORO8_Y)
+#define MORO8_SET_X(value) \
+	MORO8_X = value; \
+	MORO8_N = (MORO8_X & 0x80) != 0; \
+	MORO8_Z = MORO8_X == 0
+#define MORO8_SET_Y(value) \
+	MORO8_Y = value; \
+	MORO8_N = (MORO8_Y & 0x80) != 0; \
+	MORO8_Z = MORO8_Y == 0
+#define MORO8_SET_AC(value) \
+	MORO8_AC = value; \
+	MORO8_N = (MORO8_AC & 0x80) != 0; \
+	MORO8_Z = MORO8_AC == 0
+#define MORO8_SET_SP(value) MORO8_SP = value
+#define MORO8_ADC(operand) \
+{ \
+	moro8_uword value = operand; \
+	moro8_uword sign_bit = (MORO8_AC & 0x80) == (value & 0x80); \
+	moro8_udword result = MORO8_AC + value + MORO8_C; \
+	MORO8_C = result > 0xFF; \
+	MORO8_SET_AC((moro8_uword)(result & 0xFF)); \
+	MORO8_V = sign_bit && ((MORO8_AC & 0x80) != (value & 0x80)); \
+}
+#define MORO8_TRANSFER(from, to) \
+{ \
+	to = from; \
+	MORO8_N = (to & 0x80) != 0; \
+	MORO8_Z = to == 0; \
+}
 
 	if (instruction == '0')
 	{
@@ -445,21 +479,36 @@ size_t moro8_step(moro8_vm* vm)
 	switch (instruction)
 	{
 	case MORO8_OP_ADDC_IMM:
-		vm->registers.ac += operand;
+		MORO8_ADC(operand);
 		break;
 	case MORO8_OP_ADDC_ZP:
+		MORO8_ADC(MORO8_MEM_ZP);
+		break;
 	case MORO8_OP_ADDC_ZP_X:
+		MORO8_ADC(MORO8_MEM_ZP_X);
+		break;
 	case MORO8_OP_ADDC_ABS:
+		MORO8_ADC(MORO8_MEM_ABS);
+		break;
 	case MORO8_OP_ADDC_ABS_X:
+		MORO8_ADC(MORO8_MEM_ABS_X);
+		break;
 	case MORO8_OP_ADDC_ABS_Y:
+		MORO8_ADC(MORO8_MEM_ABS_Y);
+		break;
 	case MORO8_OP_ADDC_IND_X:
+		MORO8_ADC(MORO8_MEM_IND_X);
+		break;
 	case MORO8_OP_ADDC_IND_Y:
+		MORO8_ADC(MORO8_MEM_IND_Y);
 		break;
-	case MORO8_OP_SUB:
-		vm->registers.ac -= operand;
+	case MORO8_OP_CLC:
+		MORO8_C = 0;
+		MORO8_DEC_PC;
 		break;
-	case MORO8_OP_MUL:
-		vm->registers.ac *= operand;
+	case MORO8_OP_CLV:
+		MORO8_V = 0;
+		MORO8_DEC_PC;
 		break;
 	case MORO8_OP_JMP_ABS:
 		vm->registers.pc = MORO8_DWORD_OPERAND - 1;
@@ -474,77 +523,69 @@ size_t moro8_step(moro8_vm* vm)
 		// @todo
 		break;
 	case MORO8_OP_LDA_IMM:
-		// a = value #$FF
-		MORO8_AC = operand;
+		MORO8_SET_AC(operand);
 		break;
 	case MORO8_OP_LDA_ZP:
-		// ac = memory at address $FF
-		MORO8_AC = MORO8_MEM_ZP;
+		MORO8_SET_AC(MORO8_MEM_ZP);
 		break;
 	case MORO8_OP_LDA_ZP_X:
-		// ac = memory at address $FF, X
-		MORO8_AC = MORO8_MEM_ZP_X;
+		MORO8_SET_AC(MORO8_MEM_ZP_X);
 		break;
 	case MORO8_OP_LDA_ABS:
-		// ac = memory at address $FFFF
-		MORO8_AC = MORO8_MEM_ABS;
+		MORO8_SET_AC(MORO8_MEM_ABS);
 		break;
 	case MORO8_OP_LDA_ABS_X:
-		// ac = memory at address $FFFF, X
-		MORO8_AC = MORO8_MEM_ABS_X;
+		MORO8_SET_AC(MORO8_MEM_ABS_X);
 		break;
 	case MORO8_OP_LDA_ABS_Y:
-		// ac = memory at address $FFFF, Y
-		MORO8_AC = MORO8_MEM_ABS_Y;
+		MORO8_SET_AC(MORO8_MEM_ABS_Y);
 		break;
 	case MORO8_OP_LDA_IND_X:
-	{
-		// ac = memory at address ($FF, X)
-		MORO8_AC = MORO8_MEM_IND_X;
+		MORO8_SET_AC(MORO8_MEM_IND_X);
 		break;
-	}
 	case MORO8_OP_LDA_IND_Y:
-		// ac = memory at address ($FF), Y
-		MORO8_AC = MORO8_MEM_IND_Y;
+		MORO8_SET_AC(MORO8_MEM_IND_Y);
 		break;
 	case MORO8_OP_LDX_IMM:
-		MORO8_X = operand;
+		MORO8_SET_X(operand);
 		break;
 	case MORO8_OP_LDX_ZP:
-		MORO8_X = MORO8_MEM_ZP;
+		MORO8_SET_X(MORO8_MEM_ZP);
 		break;
 	case MORO8_OP_LDX_ZP_Y:
-		MORO8_X = MORO8_MEM_ZP_Y;
+		MORO8_SET_X(MORO8_MEM_ZP_Y);
 		break;
 	case MORO8_OP_LDX_ABS:
-		MORO8_X = MORO8_MEM_ABS;
+		MORO8_SET_X(MORO8_MEM_ABS);
 		break;
 	case MORO8_OP_LDX_ABS_Y:
-		MORO8_X = MORO8_MEM_ABS_Y;
+		MORO8_SET_X(MORO8_MEM_ABS_Y);
 		break;
 	case MORO8_OP_LDY_IMM:
-		MORO8_Y = operand;
+		MORO8_SET_Y(operand);
 		break;
 	case MORO8_OP_LDY_ZP:
-		MORO8_Y = MORO8_MEM_ZP;
+		MORO8_SET_Y(MORO8_MEM_ZP);
 		break;
 	case MORO8_OP_LDY_ZP_X:
-		MORO8_Y = MORO8_MEM_ZP_X;
+		MORO8_SET_Y(MORO8_MEM_ZP_X);
 		break;
 	case MORO8_OP_LDY_ABS:
-		MORO8_Y = MORO8_MEM_ABS;
+		MORO8_SET_Y(MORO8_MEM_ABS);
 		break;
 	case MORO8_OP_LDY_ABS_X:
-		MORO8_Y = MORO8_MEM_ABS_X;
+		MORO8_SET_Y(MORO8_MEM_ABS_X);
 		break;
 	case MORO8_OP_NOP:
-		--vm->registers.pc;
+		MORO8_DEC_PC;
 		break;
 	case MORO8_OP_PHA:
-		--vm->registers.pc;
+		vm->memory[vm->registers.sp] = MORO8_AC;
+		vm->registers.sp++;
 		break;
 	case MORO8_OP_PLA:
-		--vm->registers.pc;
+		vm->registers.sp--;
+		MORO8_SET_AC(vm->memory[vm->registers.sp]);
 		break;
 	case MORO8_OP_STA_ZP:
 		MORO8_MEM_ZP = MORO8_AC;
@@ -584,6 +625,30 @@ size_t moro8_step(moro8_vm* vm)
 		break;
 	case MORO8_OP_STY_ABS:
 		MORO8_MEM_ABS = MORO8_Y;
+		break;
+	case MORO8_OP_TAX:
+		MORO8_SET_X(MORO8_AC);
+		MORO8_DEC_PC;
+		break;
+	case MORO8_OP_TAY:
+		MORO8_SET_Y(MORO8_AC);
+		MORO8_DEC_PC;
+		break;
+	case MORO8_OP_TSX:
+		MORO8_SET_X(MORO8_SP);
+		MORO8_DEC_PC;
+		break;
+	case MORO8_OP_TXA:
+		MORO8_SET_AC(MORO8_X);
+		MORO8_DEC_PC;
+		break;
+	case MORO8_OP_TXS:
+		MORO8_SET_SP(MORO8_X);
+		MORO8_DEC_PC;
+		break;
+	case MORO8_OP_TYA:
+		MORO8_SET_AC(MORO8_Y);
+		MORO8_DEC_PC;
 		break;
 	}
 
