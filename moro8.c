@@ -482,7 +482,8 @@ size_t moro8_step(moro8_vm* vm)
 	moro8_uword* value = &operand; \
 	MORO8_C = *value & 0x1; \
 	MORO8_N = 0; \
-	*value = (*value & 0x7E) >> 1; \
+	*value = (*value & 0xFE) >> 1; \
+	MORO8_Z = *value == 0; \
 }
 #define MORO8_TRANSFER(from, to) \
 { \
@@ -662,6 +663,7 @@ size_t moro8_step(moro8_vm* vm)
 		break;
 	case MORO8_OP_LSR_AC:
 		MORO8_LSR(MORO8_AC);
+		MORO8_DEC_PC;
 		break;
 	case MORO8_OP_LSR_ZP:
 		MORO8_LSR(MORO8_MEM_ZP);
