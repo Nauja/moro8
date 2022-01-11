@@ -1,6 +1,7 @@
 # moro8
 
 [![CI](https://github.com/Nauja/libfs/actions/workflows/CI.yml/badge.svg)](https://github.com/Nauja/libfs/actions/workflows/CI.yml)
+[![CI Emscripten](https://github.com/Nauja/moro8/actions/workflows/CI_emscripten.yml/badge.svg)](https://github.com/Nauja/moro8/actions/workflows/CI_emscripten.yml)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Nauja/libfs/master/LICENSE)
 
 Fantasy CPU.
