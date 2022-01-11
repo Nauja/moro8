@@ -1,0 +1,30 @@
+name: CI emscripten
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+        fetch-depth: 1000
+    - uses: mymindstorm/setup-emsdk@v11
+    - name: build with emscripten
+      run: |
+          mkdir -p build
+          cd build
+          emcmake cmake ..
+          cmake --build .
