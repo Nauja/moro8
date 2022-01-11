@@ -24,7 +24,4 @@ jobs:
     - uses: mymindstorm/setup-emsdk@v11
     - name: build with emscripten
       run: |
-          mkdir -p build
-          cd build
-          emcmake cmake ..
-          cmake --build .
+          emcc moro8.c -o moro8.js -s WASM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
