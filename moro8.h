@@ -165,7 +165,7 @@ typedef short moro8_dword;
  * Fortunately, the size of our vm and the number of required
  * bytes for printing its state are well known at compile time.
  */
-#define MORO8_PRINT_BUFFER_SIZE 235993
+#define MORO8_PRINT_BUFFER_SIZE 253485
 
 enum moro8_opcode
 {
@@ -190,6 +190,14 @@ enum moro8_opcode
 	MORO8_OP_ASL_ZP_X = 0x16,
 	MORO8_OP_ASL_ABS = 0x0E,
 	MORO8_OP_ASL_ABS_X = 0x1E,
+	MORO8_OP_BCC = 0x90,
+	MORO8_OP_BCS = 0xB0,
+	MORO8_OP_BEQ = 0xF0,
+	MORO8_OP_BMI = 0x30,
+	MORO8_OP_BNE = 0xD0,
+	MORO8_OP_BPL = 0x10,
+	MORO8_OP_BVC = 0x50,
+	MORO8_OP_BVS = 0x70,
 	MORO8_OP_CLC = 0x18,
 	MORO8_OP_CLV = 0xB8,
 	MORO8_OP_EOR_IMM = 0x49,

@@ -27,6 +27,17 @@
 #define MORO8_TRUE 1
 #define MORO8_FALSE 0
 
+#define MORO8_PC vm->registers.pc
+#define MORO8_AC vm->registers.ac
+#define MORO8_X vm->registers.x
+#define MORO8_Y vm->registers.y
+#define MORO8_SR vm->registers.sr
+#define MORO8_SP vm->registers.sp
+#define MORO8_C vm->registers.p.c
+#define MORO8_Z vm->registers.p.z
+#define MORO8_V vm->registers.p.v
+#define MORO8_N vm->registers.p.n
+
 struct moro8_vm {
 	struct {
 		// Program counter
@@ -156,7 +167,7 @@ static inline char* moro8_print_register_dword(char* buf, const char* name, moro
 static inline char* moro8_print_memory(char* buf, const moro8_vm* vm)
 {
 	const moro8_uword* mem = &vm->memory[0];
-	for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE; i += 0xF)
+	for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE - 0x10; i += 0x10)
 	{
 		if (i > 0)
 		{
@@ -168,7 +179,7 @@ static inline char* moro8_print_memory(char* buf, const moro8_vm* vm)
 		*buf++ = ':';
 		*buf++ = ' ';
 
-		for (moro8_uword j = 0; j < 0xF; ++j)
+		for (moro8_uword j = 0; j <= 0xF; ++j)
 		{
 			if (j > 0)
 			{
@@ -422,15 +433,6 @@ size_t moro8_step(moro8_vm* vm)
 #define MORO8_DWORD_OPERAND (operand + (vm->memory[++vm->registers.pc] << 8))
 /** Get a double word at a memory address */
 #define MORO8_MEMORY_DWORD(addr) ((moro8_udword)vm->memory[addr] + (((moro8_udword)vm->memory[addr + 1]) << 8))
-#define MORO8_AC vm->registers.ac
-#define MORO8_X vm->registers.x
-#define MORO8_Y vm->registers.y
-#define MORO8_SR vm->registers.sr
-#define MORO8_SP vm->registers.sp
-#define MORO8_C vm->registers.p.c
-#define MORO8_Z vm->registers.p.z
-#define MORO8_V vm->registers.p.v
-#define MORO8_N vm->registers.p.n
 #define MORO8_DEC_PC --vm->registers.pc
 #define MORO8_TWO_COMPLEMENT(value) (~result + 1)
 #define MORO8_MEM(addr) vm->memory[addr]
@@ -491,8 +493,15 @@ size_t moro8_step(moro8_vm* vm)
 	MORO8_N = MORO8_IS_NEGATIVE(to); \
 	MORO8_Z = to == 0; \
 }
+#define MORO8_BRANCH(condition) \
+{ \
+	if (condition) { \
+		MORO8_PC += ((moro8_word)operand) - 1; \
+	} \
+	MORO8_DEC_PC; \
+}
 
-	if (instruction == '0')
+	if (instruction == 0x60)
 	{
 		return MORO8_FALSE;
 	}
@@ -562,6 +571,30 @@ size_t moro8_step(moro8_vm* vm)
 		break;
 	case MORO8_OP_ASL_ABS_X:
 		MORO8_ASL(MORO8_MEM_ABS_X);
+		break;
+	case MORO8_OP_BCC:
+		MORO8_BRANCH(MORO8_C == 0);
+		break;
+	case MORO8_OP_BCS:
+		MORO8_BRANCH(MORO8_C != 0);
+		break;
+	case MORO8_OP_BEQ:
+		MORO8_BRANCH(MORO8_Z != 0);
+		break;
+	case MORO8_OP_BMI:
+		MORO8_BRANCH(MORO8_N != 0);
+		break;
+	case MORO8_OP_BNE:
+		MORO8_BRANCH(MORO8_Z == 0);
+		break;
+	case MORO8_OP_BPL:
+		MORO8_BRANCH(MORO8_N == 0);
+		break;
+	case MORO8_OP_BVC:
+		MORO8_BRANCH(MORO8_V == 0);
+		break;
+	case MORO8_OP_BVS:
+		MORO8_BRANCH(MORO8_V != 0);
 		break;
 	case MORO8_OP_CLC:
 		MORO8_C = 0;
