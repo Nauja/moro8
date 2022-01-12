@@ -801,12 +801,20 @@ void moro8_run(moro8_vm* vm)
     moro8_resume(vm);
 }
 
-moro8_udword moro8_get_register(const moro8_vm* vm, moro8_register reg)
+moro8_udword moro8_get_pc(const moro8_vm* vm)
+{
+    return vm->registers.pc;
+}
+
+void moro8_set_pc(moro8_vm* vm, moro8_udword value)
+{
+    vm->registers.pc = value;
+}
+
+moro8_uword moro8_get_register(const moro8_vm* vm, moro8_register reg)
 {
     switch (reg)
     {
-    case MORO8_REGISTER_PC:
-        return vm->registers.pc;
     case MORO8_REGISTER_AC:
         return vm->registers.ac;
     case MORO8_REGISTER_X:
@@ -820,13 +828,10 @@ moro8_udword moro8_get_register(const moro8_vm* vm, moro8_register reg)
     }
 }
 
-void moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_udword value)
+void moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_uword value)
 {
     switch (reg)
     {
-    case MORO8_REGISTER_PC:
-        vm->registers.pc = value;
-        break;
     case MORO8_REGISTER_AC:
         vm->registers.ac = (moro8_uword)value;
         break;

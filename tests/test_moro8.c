@@ -18,10 +18,10 @@ static void test_create(void** state) {
 
     // Check initial state
 #define REGISTER_FUNC(reg) moro8_assert_register_equal(vm, reg, 0)
-    MORO8_OTHER_REGISTERS(REGISTER_FUNC, MORO8_REGISTER_PC);
+    MORO8_ALL_REGISTERS(REGISTER_FUNC);
 #undef REGISTER_FUNC
 
-    moro8_assert_register_equal(vm, MORO8_REGISTER_PC, MORO8_PROGMEM_OFFSET);
+    moro8_assert_pc_equal(vm, MORO8_PROGMEM_OFFSET);
 }
 
 /** Test moro8_from_buffer works correctly */

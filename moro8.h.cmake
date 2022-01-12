@@ -114,9 +114,13 @@ extern "C"
 #endif
 #endif /* __WINDOWS__ */
 
+/** Type for an unsigned single byte. */
 typedef unsigned char moro8_uword;
+/** Type for an unsigned double byte. */
 typedef unsigned short moro8_udword;
+/** Type for a signed single byte. */
 typedef char moro8_word;
+/** Type for a signed double byte. */
 typedef short moro8_dword;
 
 // Macros for the memory structure
@@ -271,8 +275,6 @@ enum moro8_opcode
 
 enum moro8_register
 {
-	// Program counter
-	MORO8_REGISTER_PC,
 	// Accumulator
 	MORO8_REGISTER_AC,
 	// Index registers
@@ -458,9 +460,23 @@ MORO8_PUBLIC(size_t) moro8_step(struct moro8_vm* vm);
 
 MORO8_PUBLIC(void) moro8_run(struct moro8_vm* vm);
 
-MORO8_PUBLIC(moro8_udword) moro8_get_register(const struct moro8_vm* vm, enum moro8_register reg);
+/**
+ * Gets the address stored in program counter register.
+ * @param[in] vm Some vm
+ * @return Value in program counter.
+ */
+MORO8_PUBLIC(moro8_udword) moro8_get_pc(const struct moro8_vm* vm);
 
-MORO8_PUBLIC(void) moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_udword value);
+/**
+ * Sets the address stored in program counter register.
+ * @param[in] vm Some vm
+ * @param[in] address Absolute address
+ */
+MORO8_PUBLIC(void) moro8_set_pc(struct moro8_vm* vm, moro8_udword address);
+
+MORO8_PUBLIC(moro8_uword) moro8_get_register(const struct moro8_vm* vm, enum moro8_register reg);
+
+MORO8_PUBLIC(void) moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_uword value);
 
 MORO8_PUBLIC(moro8_udword) moro8_get_memory(const struct moro8_vm* vm, moro8_uword* buffer, moro8_udword offset, moro8_udword size);
 
@@ -497,13 +513,11 @@ MORO8_PUBLIC(int) moro8_dump_state(struct moro8_vm* vm, const char* path);
 /** Set a double word at RAM + offset */
 #define moro8_set_ram_dword(vm, offset, value) moro8_set_memory_dword(vm, MORO8_RAM(offset), value)
 /** Get registers values */
-#define moro8_get_pc(vm, value) moro8_get_register(vm, MORO8_REGISTER_PC)
-#define moro8_get_a(vm, value) moro8_get_register(vm, MORO8_REGISTER_A)
-#define moro8_get_x(vm, value) moro8_get_register(vm, MORO8_REGISTER_X)
-#define moro8_get_y(vm, value) moro8_get_register(vm, MORO8_REGISTER_Y)
-#define moro8_get_s(vm, value) moro8_get_register(vm, MORO8_REGISTER_S)
+#define moro8_get_a(vm) moro8_get_register(vm, MORO8_REGISTER_A)
+#define moro8_get_x(vm) moro8_get_register(vm, MORO8_REGISTER_X)
+#define moro8_get_y(vm) moro8_get_register(vm, MORO8_REGISTER_Y)
+#define moro8_get_s(vm) moro8_get_register(vm, MORO8_REGISTER_S)
 /** Set registers values */
-#define moro8_set_pc(vm, value) moro8_set_register(vm, MORO8_REGISTER_PC, value)
 #define moro8_set_a(vm, value) moro8_set_register(vm, MORO8_REGISTER_A, value)
 #define moro8_set_x(vm, value) moro8_set_register(vm, MORO8_REGISTER_X, value)
 #define moro8_set_y(vm, value) moro8_set_register(vm, MORO8_REGISTER_Y, value)

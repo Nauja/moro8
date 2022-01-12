@@ -24,14 +24,12 @@ typedef struct moro8_vm moro8_vm;
 #define MORO8_ARRAY_SIZE(foo) (sizeof(foo)/sizeof(foo[0]))
 
 #define MORO8_ALL_REGISTERS(fun) \
-    fun(MORO8_REGISTER_PC); \
     fun(MORO8_REGISTER_AC); \
     fun(MORO8_REGISTER_X); \
     fun(MORO8_REGISTER_Y); \
     fun(MORO8_REGISTER_SP)
 
 #define MORO8_OTHER_REGISTERS(fun, reg) \
-    if (MORO8_REGISTER_PC != reg) fun(MORO8_REGISTER_PC); \
     if (MORO8_REGISTER_AC != reg) fun(MORO8_REGISTER_AC); \
     if (MORO8_REGISTER_X != reg) fun(MORO8_REGISTER_X); \
     if (MORO8_REGISTER_Y != reg) fun(MORO8_REGISTER_Y); \
@@ -70,7 +68,7 @@ static void _moro8_assert_memory_equal(moro8_vm* vm, const moro8_uword* buf, mor
 #define moro8_assert_equal(left, right) _moro8_equal(left, right)
 #define moro8_assert_register_equal(vm, reg, value) assert_int_equal(moro8_get_register(vm, reg), value)
 #define moro8_assert_register_not_equal(vm, reg, value) assert_int_not_equal(moro8_get_register(vm, reg), value)
-#define moro8_assert_pc_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_PC), value)
+#define moro8_assert_pc_equal(vm, value) assert_int_equal(moro8_get_pc(vm), value)
 #define moro8_assert_accumulator_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_A), value)
 #define moro8_assert_x_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_X), value)
 #define moro8_assert_y_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_Y), value)
