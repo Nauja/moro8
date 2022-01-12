@@ -48,7 +48,7 @@ include(ConfigureChecks)
 
 option(WITH_STATIC_LIB "Build a static library" ON)
 option(UNIT_TESTING "Unit Tests Enabled" ON)
-option(DOXYGEN "Docs Enabled" ON)
+option(DOXYGEN "Docs Enabled" OFF)
 option(MINIMALIST "Strip extra functions from the API" OFF)
 
 if(DOXYGEN)
