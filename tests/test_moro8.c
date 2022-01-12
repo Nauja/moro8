@@ -101,10 +101,10 @@ static void test_parse(void** state) {
     moro8_assert_output_dir(&output_dir);
 
     char buf[LIBFS_MAX_PATH];
-    fs_assert_join_path(buf, output_dir, "test_print.txt");
+    fs_assert_join_path(&buf, output_dir, "test_print.txt");
 
     // Print vm1 state and write to file
-    const char* dump = moro8_print(vm1);
+    char* dump = moro8_print(vm1);
     assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE));
     free(dump);
 
@@ -118,7 +118,7 @@ static void test_parse(void** state) {
 
     // Print vm2 state and write to file
     dump = moro8_print(vm2);
-    fs_assert_join_path(buf, output_dir, "test_print2.txt");
+    fs_assert_join_path(&buf, output_dir, "test_print2.txt");
     assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE));
     free(dump);
 

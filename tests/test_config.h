@@ -25,35 +25,17 @@ typedef struct moro8_vm moro8_vm;
 
 #define MORO8_ALL_REGISTERS(fun) \
     fun(MORO8_REGISTER_PC); \
-    fun(MORO8_REGISTER_A); \
+    fun(MORO8_REGISTER_AC); \
     fun(MORO8_REGISTER_X); \
     fun(MORO8_REGISTER_Y); \
-    fun(MORO8_REGISTER_S)
+    fun(MORO8_REGISTER_SP)
 
 #define MORO8_OTHER_REGISTERS(fun, reg) \
     if (MORO8_REGISTER_PC != reg) fun(MORO8_REGISTER_PC); \
-    if (MORO8_REGISTER_A != reg) fun(MORO8_REGISTER_A); \
+    if (MORO8_REGISTER_AC != reg) fun(MORO8_REGISTER_AC); \
     if (MORO8_REGISTER_X != reg) fun(MORO8_REGISTER_X); \
     if (MORO8_REGISTER_Y != reg) fun(MORO8_REGISTER_Y); \
-    if (MORO8_REGISTER_S != reg) fun(MORO8_REGISTER_S)
-
-#define MORO8_ALL_OPCODES(fun) \
-	fun(MORO8_OP_LDA_IMM) \
-	fun(MORO8_OP_LDA_ZP) \
-	fun(MORO8_OP_LDA_ZP_X) \
-	fun(MORO8_OP_LDA_ABS) \
-	fun(MORO8_OP_LDA_ABS_X) \
-	fun(MORO8_OP_LDA_ABS_Y) \
-	fun(MORO8_OP_LDX_IMM) \
-	fun(MORO8_OP_LDX_ZP) \
-	fun(MORO8_OP_LDX_ZP_X) \
-	fun(MORO8_OP_LDX_ABS) \
-	fun(MORO8_OP_LDX_ABS_Y) \
-	fun(MORO8_OP_LDY_IMM) \
-	fun(MORO8_OP_LDY_ZP) \
-	fun(MORO8_OP_LDY_ZP_X) \
-	fun(MORO8_OP_LDY_ABS) \
-	fun(MORO8_OP_LDY_ABS_X)
+    if (MORO8_REGISTER_SP != reg) fun(MORO8_REGISTER_SP)
 
 static struct moro8_vm* _moro8_create()
 {

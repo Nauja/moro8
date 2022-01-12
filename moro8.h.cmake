@@ -7,85 +7,85 @@ extern "C"
 #endif
 
 /** Major version of moro8. */
-#define MORO8_VERSION_MAJOR 0
+#define MORO8_VERSION_MAJOR @MORO8_VERSION_MAJOR@
 /** Minor version of moro8. */
-#define MORO8_VERSION_MINOR 1
+#define MORO8_VERSION_MINOR @MORO8_VERSION_MINOR@
 /** Patch version of moro8. */
-#define MORO8_VERSION_PATCH 0
+#define MORO8_VERSION_PATCH @MORO8_VERSION_PATCH@
 
 /* Define to 1 if you have the <stdio.h> header file. */
 #ifndef HAVE_STDIO_H
-#define HAVE_STDIO_H 1
+#cmakedefine HAVE_STDIO_H 1
 #endif
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #ifndef HAVE_STDLIB_H
-#define HAVE_STDLIB_H 1
+#cmakedefine HAVE_STDLIB_H 1
 #endif
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #ifndef HAVE_SYS_STAT_H
-#define HAVE_SYS_STAT_H 1
+#cmakedefine HAVE_SYS_STAT_H 1
 #endif
 
 /* Define to 1 if you have the <sys/sendfile.h> header file. */
 #ifndef HAVE_SYS_SENDFILE_H
-/* #undef HAVE_SYS_SENDFILE_H */
+#cmakedefine HAVE_SYS_SENDFILE_H 1
 #endif
 
 /* Define to 1 if you have the <string.h> header file. */
 #ifndef HAVE_STRING_H
-#define HAVE_STRING_H 1
+#cmakedefine HAVE_STRING_H 1
 #endif
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #ifndef HAVE_UNISTD_H
-/* #undef HAVE_UNISTD_H */
+#cmakedefine HAVE_UNISTD_H 1
 #endif
 
 /* Define to 1 if you have the `free' function. */
 #ifndef HAVE_FREE
-#define HAVE_FREE 1
+#cmakedefine HAVE_FREE 1
 #endif
 
 /* Define to 1 if you have the `malloc' function. */
 #ifndef HAVE_MALLOC
-#define HAVE_MALLOC 1
+#cmakedefine HAVE_MALLOC 1
 #endif
 
 /* Define to 1 if you have the `memset' function. */
 #ifndef HAVE_MEMSET
-#define HAVE_MEMSET 1
+#cmakedefine HAVE_MEMSET 1
 #endif
 
 /* Define to 1 if you have the `memcpy' function. */
 #ifndef HAVE_MEMCPY
-#define HAVE_MEMCPY 1
+#cmakedefine HAVE_MEMCPY 1
 #endif
 
 /* Define to 1 if you have the `_snprintf_s' function. */
 #ifndef HAVE__SNPRINTF_S
-/* #undef HAVE__SNPRINTF_S */
+#cmakedefine HAVE__SNPRINTF_S 1
 #endif
 
 /* Define to 1 if you have the `_snprintf' function. */
 #ifndef HAVE__SNPRINTF
-/* #undef HAVE__SNPRINTF */
+#cmakedefine HAVE__SNPRINTF 1
 #endif
 
 /* Define to 1 if you have the `snprintf' function. */
 #ifndef HAVE_SNPRINTF
-#define HAVE_SNPRINTF 1
+#cmakedefine HAVE_SNPRINTF 1
 #endif
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #ifndef HAVE_VSNPRINTF
-#define HAVE_VSNPRINTF 1
+#cmakedefine HAVE_VSNPRINTF 1
 #endif
 
 /* Define to 1 if you build with Doxygen. */
 #ifndef MORO8_DOXYGEN
-#define MORO8_DOXYGEN 1
+#cmakedefine MORO8_DOXYGEN 1
 #endif
 
 #ifdef HAVE_STDDEF_H
@@ -164,21 +164,21 @@ extern "C"
 #endif
 #endif /* __WINDOWS__ */
 
-/** Type for an unsigned single byte. */
 typedef unsigned char moro8_uword;
-/** Type for an unsigned double byte. */
 typedef unsigned short moro8_udword;
-/** Type for a signed single byte. */
 typedef char moro8_word;
-/** Type for a signed double byte. */
 typedef short moro8_dword;
 
 // Macros for the memory structure
 
 /** Total size of the memory */
 #define MORO8_MEMORY_SIZE 0xFFFF
+/** Offset of the zero zp in memory */
+#define MORO8_ZP_OFFSET 0
+/** Total size of the zp area */
+#define MORO8_ZP_SIZE 0xFF
 /** Offset of the progmem area in memory */
-#define MORO8_PROGMEM_OFFSET 0xFF
+#define MORO8_PROGMEM_OFFSET MORO8_ZP_SIZE
 /** Total size of the progmem area */
 #define MORO8_PROGMEM_SIZE 0xFF
 /** Offset of the RAM area in memory */

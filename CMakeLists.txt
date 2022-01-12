@@ -66,7 +66,7 @@ macro_ensure_out_of_source_build("${PROJECT_NAME} requires an out of source buil
 message("Building for target : ${CMAKE_SYSTEM_NAME}")
 message("PROJECT_VERSION: ${MORO8_VERSION}")
 message("VERSION_HASH: ${VERSION_HASH}")
-#configure_file(moro8.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/moro8.h)
+configure_file(moro8.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/moro8.h)
 
 # moro8
 set(MORO8_LIB moro8)
