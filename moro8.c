@@ -1,27 +1,15 @@
 ﻿#include "moro8.h"
 
-#include <stdio.h>
-
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-#ifdef HAVE_SYS_SENDFILE_H
-#include <sys/sendfile.h>
-#endif
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
+
 #ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-#ifdef HAVE_WINDOWS_H
-#include <windows.h>
 #endif
 
 #define MORO8_TRUE 1

@@ -23,24 +23,9 @@ extern "C"
 #cmakedefine HAVE_STDLIB_H 1
 #endif
 
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#ifndef HAVE_SYS_STAT_H
-#cmakedefine HAVE_SYS_STAT_H 1
-#endif
-
-/* Define to 1 if you have the <sys/sendfile.h> header file. */
-#ifndef HAVE_SYS_SENDFILE_H
-#cmakedefine HAVE_SYS_SENDFILE_H 1
-#endif
-
 /* Define to 1 if you have the <string.h> header file. */
 #ifndef HAVE_STRING_H
 #cmakedefine HAVE_STRING_H 1
-#endif
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#ifndef HAVE_UNISTD_H
-#cmakedefine HAVE_UNISTD_H 1
 #endif
 
 /* Define to 1 if you have the `free' function. */
@@ -53,44 +38,9 @@ extern "C"
 #cmakedefine HAVE_MALLOC 1
 #endif
 
-/* Define to 1 if you have the `memset' function. */
-#ifndef HAVE_MEMSET
-#cmakedefine HAVE_MEMSET 1
-#endif
-
-/* Define to 1 if you have the `memcpy' function. */
-#ifndef HAVE_MEMCPY
-#cmakedefine HAVE_MEMCPY 1
-#endif
-
-/* Define to 1 if you have the `_snprintf_s' function. */
-#ifndef HAVE__SNPRINTF_S
-#cmakedefine HAVE__SNPRINTF_S 1
-#endif
-
-/* Define to 1 if you have the `_snprintf' function. */
-#ifndef HAVE__SNPRINTF
-#cmakedefine HAVE__SNPRINTF 1
-#endif
-
-/* Define to 1 if you have the `snprintf' function. */
-#ifndef HAVE_SNPRINTF
-#cmakedefine HAVE_SNPRINTF 1
-#endif
-
-/* Define to 1 if you have the `vsnprintf' function. */
-#ifndef HAVE_VSNPRINTF
-#cmakedefine HAVE_VSNPRINTF 1
-#endif
-
 /* Define to 1 if you build with Doxygen. */
 #ifndef MORO8_DOXYGEN
 #cmakedefine MORO8_DOXYGEN 1
-#endif
-
-#ifdef HAVE_STDDEF_H
-/* Required for size_t */
-#include <stddef.h>
 #endif
 
 #ifndef MORO8_MALLOC

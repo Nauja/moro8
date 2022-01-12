@@ -23,24 +23,9 @@ extern "C"
 #define HAVE_STDLIB_H 1
 #endif
 
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#ifndef HAVE_SYS_STAT_H
-#define HAVE_SYS_STAT_H 1
-#endif
-
-/* Define to 1 if you have the <sys/sendfile.h> header file. */
-#ifndef HAVE_SYS_SENDFILE_H
-/* #undef HAVE_SYS_SENDFILE_H */
-#endif
-
 /* Define to 1 if you have the <string.h> header file. */
 #ifndef HAVE_STRING_H
 #define HAVE_STRING_H 1
-#endif
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#ifndef HAVE_UNISTD_H
-/* #undef HAVE_UNISTD_H */
 #endif
 
 /* Define to 1 if you have the `free' function. */
@@ -53,44 +38,9 @@ extern "C"
 #define HAVE_MALLOC 1
 #endif
 
-/* Define to 1 if you have the `memset' function. */
-#ifndef HAVE_MEMSET
-#define HAVE_MEMSET 1
-#endif
-
-/* Define to 1 if you have the `memcpy' function. */
-#ifndef HAVE_MEMCPY
-#define HAVE_MEMCPY 1
-#endif
-
-/* Define to 1 if you have the `_snprintf_s' function. */
-#ifndef HAVE__SNPRINTF_S
-/* #undef HAVE__SNPRINTF_S */
-#endif
-
-/* Define to 1 if you have the `_snprintf' function. */
-#ifndef HAVE__SNPRINTF
-/* #undef HAVE__SNPRINTF */
-#endif
-
-/* Define to 1 if you have the `snprintf' function. */
-#ifndef HAVE_SNPRINTF
-#define HAVE_SNPRINTF 1
-#endif
-
-/* Define to 1 if you have the `vsnprintf' function. */
-#ifndef HAVE_VSNPRINTF
-#define HAVE_VSNPRINTF 1
-#endif
-
 /* Define to 1 if you build with Doxygen. */
 #ifndef MORO8_DOXYGEN
 #define MORO8_DOXYGEN 1
-#endif
-
-#ifdef HAVE_STDDEF_H
-/* Required for size_t */
-#include <stddef.h>
 #endif
 
 #ifndef MORO8_MALLOC
@@ -164,21 +114,21 @@ extern "C"
 #endif
 #endif /* __WINDOWS__ */
 
-/** Type for an unsigned single byte. */
 typedef unsigned char moro8_uword;
-/** Type for an unsigned double byte. */
 typedef unsigned short moro8_udword;
-/** Type for a signed single byte. */
 typedef char moro8_word;
-/** Type for a signed double byte. */
 typedef short moro8_dword;
 
 // Macros for the memory structure
 
 /** Total size of the memory */
 #define MORO8_MEMORY_SIZE 0xFFFF
+/** Offset of the zero zp in memory */
+#define MORO8_ZP_OFFSET 0
+/** Total size of the zp area */
+#define MORO8_ZP_SIZE 0xFF
 /** Offset of the progmem area in memory */
-#define MORO8_PROGMEM_OFFSET 0xFF
+#define MORO8_PROGMEM_OFFSET MORO8_ZP_SIZE
 /** Total size of the progmem area */
 #define MORO8_PROGMEM_SIZE 0xFF
 /** Offset of the RAM area in memory */
