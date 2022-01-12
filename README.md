@@ -19,6 +19,10 @@ Compile to **wasm** and **js**:
 
 ```bash
 emcc moro8.c -o moro8.js -s WASM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
+
+emcc moro8.c -o moro8.js -s MODULARIZE -s EXPORT_NAME="moro8" -s NO_FILESYSTEM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
+
+emcc moro8.c -o moro8.js -s MODULARIZE -s EXPORT_NAME="moro8" -s WASM=0 -s NO_FILESYSTEM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
 ```
 
 Run locally:
