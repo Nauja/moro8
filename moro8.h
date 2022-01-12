@@ -58,10 +58,6 @@ extern "C"
 
 #include <stddef.h>
 
-#if defined(MORO8_EMSCRIPTEN)
-#include <emscripten/emscripten.h>
-#endif
-
 #ifndef MORO8_MALLOC
 #ifdef HAVE_MALLOC
 #define MORO8_MALLOC malloc
@@ -78,13 +74,6 @@ extern "C"
 #define __WINDOWS__
 #endif
 
-#if defined(MORO8_EMSCRIPTEN)
-#ifndef EMSCRIPTEN_KEEPALIVE
-#define EMSCRIPTEN_KEEPALIVE
-#endif /* EMSCRIPTEN_KEEPALIVE */
-
-#define MORO8_PUBLIC(type) type EMSCRIPTEN_KEEPALIVE
-#else
 #ifdef __WINDOWS__
 #define MORO8_CDECL __cdecl
 #define MORO8_STDCALL __stdcall
@@ -111,7 +100,6 @@ extern "C"
 #define MORO8_PUBLIC(type) type
 #endif
 #endif /* __WINDOWS__ */
-#endif /* MORO8_EMSCRIPTEN */
 
 typedef unsigned char moro8_uword;
 typedef unsigned short moro8_udword;

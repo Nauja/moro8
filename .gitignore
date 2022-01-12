@@ -15,7 +15,6 @@ CMakeFiles
 build/lib
 build/vendor
 build/cmocka
-build/emscripten
 build/config.h
 build/version.h
 build/tests
