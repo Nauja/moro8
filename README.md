@@ -3,77 +3,35 @@
 [![CI](https://github.com/Nauja/moro8/actions/workflows/CI.yml/badge.svg)](https://github.com/Nauja/moro8/actions/workflows/CI.yml)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Nauja/moro8/master/LICENSE)
 
-Fantasy CPU.
+moro8 is a fantasy CPU written in ANSI C with portability and minimalism in mind.
 
-## Build Manually
+## Why ?
 
-Activate latest **emsdk**:
+The ultimate goal of writing moro8 was to:
 
-```bash
-cd /d F:\moro8
-..\emscripten\emsdk\emsdk.bat activate latest
-```
+  * Learn more about 8bit cpu and microcontrollers
+  * Write small programs and games in assembler for fun
+  * Make it run programs loaded from an SD card on Arduino
+  * Compile it to WASM so it can run on the Web (see [moro8.js](https://github.com/Nauja/moro8.js))
 
-Compile to **wasm** and **js**:
+## Usage
 
-```bash
-emcc moro8.c -o moro8.js -s WASM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
+This is an example of running a program:
 
-emcc moro8.c -o moro8.js -s MODULARIZE -s EXPORT_NAME="moro8" -s NO_FILESYSTEM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
+```c
+#include "moro8.h"
 
-emcc moro8.c -o moro8.js -s MODULARIZE -s EXPORT_NAME="moro8" -s WASM=0 -s NO_FILESYSTEM=1 -s EXPORTED_FUNCTIONS=["_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=ccall
-```
+struct moro8_vm* vm = moro8_create();
 
-Run locally:
+moro8_uword prog[] = {
+    0xA9, 0x02, // LDA #$02
+    0x69, 0x03  // ADC #$03
+};
+moro8_load(vm, prog, 4);
 
-```bash
-emrun --browser chrome moro8.html
-```
+printf("Result of 2 * 3 is %d", moro8_get_a(vm));
 
-## Usage:
-
-Include the module:
-
-```html
-<script src="moro8.js"></script>
-```
-
-Initialize the VM:
-
-```js
-var moro8_vm = Module.ccall('moro8_create', // name of C function
-  null, // return type
-  null, // argument types
-  null); // arguments
-```
-
-Load a new program:
-
-```js
-Module.ccall('moro8_load', // name of C function
-  null, // return type
-  ["number", "array", "number"], // argument types
-  [moro8_vm, [0, 2, 9, 3, 8, 1, 48], 7]); // arguments
-```
-
-Run your program:
-
-```js
-Module.ccall('moro8_run', // name of C function
-  null, // return type
-  ["number"], // argument types
-  [moro8_vm]); // arguments
-```
-
-Get register value:
-
-```js
-var result = Module.ccall('moro8_get_register', // name of C function
-  "number", // return type
-  ["number", "number"], // argument types
-  [moro8_vm, 0]); // arguments
-
-console.log(`Result: ${result}`);
+moro8_delete(vm);
 ```
 
 ## License
