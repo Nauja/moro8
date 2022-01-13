@@ -5,7 +5,7 @@
 
 moro8 is a fantasy CPU written in ANSI C with portability and minimalism in mind.
 
-## Why ?
+## Why
 
 The ultimate goal of writing moro8 was to:
 
