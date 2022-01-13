@@ -28,6 +28,7 @@ moro8_uword prog[] = {
     0x69, 0x03  // ADC #$03
 };
 moro8_load(vm, prog, 4);
+moro8_run(vm);
 
 printf("Result of 2 * 3 is %d", moro8_get_a(vm));
 
