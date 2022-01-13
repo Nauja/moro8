@@ -10,7 +10,7 @@ moro8 is a fantasy CPU written in ANSI C with portability and minimalism in mind
 The ultimate goal of writing moro8 was to:
 
   * Learn more about 8bit cpu and microcontrollers
-  * Write small programs and games in assembler for fun
+  * Write small programs and games in assembler for fun (see [moro8asm](https://github.com/Nauja/moro8asm))
   * Make it run programs loaded from an SD card on Arduino
   * Compile it to WASM so it can run on the Web (see [moro8.js](https://github.com/Nauja/moro8.js))
 
@@ -30,7 +30,7 @@ moro8_uword prog[] = {
 moro8_load(vm, prog, 4);
 moro8_run(vm);
 
-printf("Result of 2 * 3 is %d", moro8_get_a(vm));
+printf("Result of 2 + 3 is %d", moro8_get_a(vm));
 
 moro8_delete(vm);
 ```
