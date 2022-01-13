@@ -11,7 +11,7 @@ The ultimate goal of writing moro8 was to:
 
   * Teach myself more about 8bit microcontrollers
   * Write small programs and games in assembler for fun (see [moro8asm](https://github.com/Nauja/moro8asm))
-  * Make it run programs loaded from an SD card on Arduino
+  * Make it run programs loaded from an SD card on my Arduino
   * Compile it to WASM so it can run on the Web (see [moro8.js](https://github.com/Nauja/moro8.js))
 
 ## Usage
