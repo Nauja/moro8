@@ -12,9 +12,20 @@ Welcome to moro8's documentation!
 
    intro
    examples
-   api
-   test_api
-   roadmap
+   changelog
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference:
+
+   api/functions
+   api/structures
+   api/defines
+   api/typedefs
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Test API Reference:
 
 
 Indices and tables

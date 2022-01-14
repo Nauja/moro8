@@ -1,14 +1,14 @@
 .. -*- coding: utf-8 -*-
-.. _roadmap:
+.. _changelog:
 
-=======
-Roadmap
-=======
+=========
+Changelog
+=========
 
 .. module:: moro8
 
-v0.1.0
-------
+v0.1.0 (May 17, 2019)
+---------------------
 
   * Stable API
   * Continuous integration

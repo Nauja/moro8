@@ -11,6 +11,21 @@ static void test_types(void** state) {
     assert_int_equal(sizeof(moro8_dword), 2);
 }
 
+/** Test shown in README.md */
+static void test_readme_addition(void** state) {
+    moro8_vm* vm = *state;
+
+    moro8_uword prog[] = {
+        0xA9, 0x02, // LDA #$02
+        0x69, 0x03  // ADC #$03
+    };
+    moro8_load(vm, prog, 4);
+    moro8_run(vm);
+
+    printf("Result of 2 + 3 is %d", moro8_get_a(vm));
+    assert_int_equal(moro8_get_a(vm), 5);
+}
+
 /** Test moro8_create returns something */
 static void test_create(void** state) {
     moro8_vm* vm = *state;
@@ -24,7 +39,7 @@ static void test_create(void** state) {
     moro8_assert_pc_equal(vm, MORO8_PROGMEM_OFFSET);
 }
 
-/** Test moro8_from_buffer works correctly */
+/** Test moro8_as_buffer and moro8_from_buffer functions. */
 static void test_buffer(void** state) {
     moro8_vm* vm1 = *state;
     assert_non_null(vm1);
@@ -93,7 +108,49 @@ static void test_set_register(void** state) {
     MORO8_ALL_REGISTERS(_test_set_register);
 }
 
-/** Test moro8_set_register on each registers */
+/** Test setting a single word to memory. */
+static void test_set_memory_word(void** state) {
+    moro8_vm* vm = *state;
+
+    assert_int_equal(moro8_get_memory_word(vm, 0x1000), 0);
+
+    moro8_set_memory_word(vm, 0x1000, 0xFF);
+
+    assert_int_equal(moro8_get_memory_word(vm, 0x1000), 0xFF);
+}
+
+/** Test setting a double word to memory. */
+static void test_set_memory_dword(void** state) {
+    moro8_vm* vm = *state;
+
+    assert_int_equal(moro8_get_memory_dword(vm, 0x1000), 0);
+
+    moro8_set_memory_dword(vm, 0x1000, 0xFF10);
+    
+    assert_int_equal(moro8_get_memory_word(vm, 0x1000), 0x10);
+    assert_int_equal(moro8_get_memory_word(vm, 0x1001), 0xFF);
+
+    assert_int_equal(moro8_get_memory_dword(vm, 0x1000), 0xFF10);
+}
+
+/**
+ * Test setting a double word at address MORO8_MEMORY_SIZE - 1.
+ * 
+ * This should fill only the low byte.
+ */
+static void test_set_memory_dword_oom(void** state) {
+    moro8_vm* vm = *state;
+
+    assert_int_equal(moro8_get_memory_dword(vm, MORO8_MEMORY_SIZE - 1), 0);
+
+    moro8_set_memory_dword(vm, MORO8_MEMORY_SIZE - 1, 0xFF10);
+
+    assert_int_equal(moro8_get_memory_word(vm, MORO8_MEMORY_SIZE - 1), 0x10);
+
+    assert_int_equal(moro8_get_memory_dword(vm, MORO8_MEMORY_SIZE - 1), 0x10);
+}
+
+/** Test printing a vm state and parsing it back. */
 static void test_parse(void** state) {
     moro8_vm* vm1 = *state;
 
@@ -131,10 +188,14 @@ static void test_parse(void** state) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_types),
+        cmocka_unit_test_setup_teardown(test_readme_addition, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_create, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_buffer, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_snapshot, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_register, moro8_setup_vm, moro8_delete_vm),
+        cmocka_unit_test_setup_teardown(test_set_memory_word, moro8_setup_vm, moro8_delete_vm),
+        cmocka_unit_test_setup_teardown(test_set_memory_dword, moro8_setup_vm, moro8_delete_vm),
+        cmocka_unit_test_setup_teardown(test_set_memory_dword_oom, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_parse, moro8_setup_vm, moro8_delete_vm)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -10,10 +10,6 @@
 #include "tests/fs_testutils.h"
 #include "moro8.h"
 
-#ifndef MAX_PATH
-#define MAX_PATH 255
-#endif
-
 #define DIRECTORY_DATA "data"
 #define DIRECTORY_OUTPUT "output"
 
@@ -53,12 +49,12 @@ static void _moro8_equal(struct moro8_vm* left, struct moro8_vm* right)
 	assert_true(moro8_equal(left, right));
 }
 
-static void _moro8_assert_memory_equal(moro8_vm* vm, const moro8_uword* buf, moro8_udword offset, moro8_udword size)
+static void _moro8_assert_memory_equal(struct moro8_vm* vm, const moro8_uword* buf, moro8_udword offset, moro8_udword size)
 {
 	moro8_uword value = 0;
 	for (moro8_udword i = 0; i < size; ++i)
 	{
-		moro8_get_memory_word(vm, offset + i, value);
+		moro8_get_memory_word(vm, offset + i);
 		assert_int_equal(value, buf[i]);
 	}
 }
@@ -95,7 +91,7 @@ static int moro8_setup_vm(void** state) {
 
 /** Delete the vm after running a test */
 static int moro8_delete_vm(void** state) {
-    moro8_delete((moro8_vm*)*state);
+    moro8_delete((struct moro8_vm*)*state);
     *state = NULL;
     return 0;
 }

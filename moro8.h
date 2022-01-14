@@ -112,33 +112,92 @@ extern "C"
 #else
 #define MORO8_PUBLIC(type) type
 #endif
-#endif /* __WINDOWS__ */
+#endif
 
-/** Type for an unsigned single byte. */
+#if defined(MORO8_DOXYGEN)
+#undef MORO8_MINIMALIST
+/**
+* Strips extra features from moro8.
+*
+* This implicitly sets MORO8_WITH_PARSER=0 and MORO8_WITH_HOOKS=0.
+*/
+#define MORO8_MINIMALIST 0
+#endif
+
+#if !MORO8_MINIMALIST && !defined(MORO8_WITH_PARSER)
+/**
+* Builds moro8 with support for parser.
+*
+* @note
+* Parser is not available when MORO8_MINIMALIST is defined.
+* 
+*/
+#define MORO8_WITH_PARSER 1
+#endif
+
+#if !MORO8_MINIMALIST && !defined(MORO8_WITH_HOOKS)
+/**
+* Builds moro8 with support for hooks.
+*
+* A hook is a function that can be registered to the vm for
+* custom handling of opcodes.
+*
+* @note
+* Hooks are not available when MORO8_MINIMALIST is defined.
+*
+*/
+#define MORO8_WITH_HOOKS 1
+#endif
+
+/** Type for an unsigned single byte (8-bit). */
 typedef unsigned char moro8_uword;
-/** Type for an unsigned double byte. */
+/** Type for an unsigned double byte (16-bit). */
 typedef unsigned short moro8_udword;
-/** Type for a signed single byte. */
+/** Type for a signed single byte (8-bit). */
 typedef char moro8_word;
-/** Type for a signed double byte. */
+/** Type for a signed double byte (16-bit). */
 typedef short moro8_dword;
 
-// Macros for the memory structure
-
-/** Total size of the memory */
-#define MORO8_MEMORY_SIZE 0xFFFF
-/** Offset of the zero zp in memory */
-#define MORO8_ZP_OFFSET 0
-/** Total size of the zp area */
-#define MORO8_ZP_SIZE 0xFF
+/**
+ * Total size of the memory allocated for the vm: 0x10000.
+ * 
+ * With a double word (16-bit) address, we can address up to 65536 bytes.
+ */
+#define MORO8_MEMORY_SIZE 0x10000
+ /**
+  * Total size of a single page in memory: 0x100.
+  *
+  * With a single word (8-bit) address, we can address up to 256 bytes.
+  */
+#define MORO8_PAGE_SIZE 0x100
+ /**
+  * The starting address of the stack in memory: 0x100.
+  * 
+  * The stack starts after the zero page, thus at address 0x100.
+  */
+#define MORO8_STACK_OFFSET 0x100
+ /**
+  * Total size of the stack in memory: 0x100.
+  *
+  * As the stack register is a single word (8-bit), we can address up to 256 bytes.
+  */
+#define MORO8_STACK_SIZE 0x100
 /** Offset of the progmem area in memory */
-#define MORO8_PROGMEM_OFFSET MORO8_ZP_SIZE
+#define MORO8_PROGMEM_OFFSET 0xFF
 /** Total size of the progmem area */
 #define MORO8_PROGMEM_SIZE 0xFF
 /** Offset of the RAM area in memory */
 #define MORO8_RAM_OFFSET (MORO8_PROGMEM_OFFSET + MORO8_PROGMEM_SIZE)
 /** Total size of the RAM area */
 #define MORO8_RAM_SIZE (MORO8_MEMORY_SIZE - MORO8_RAM_OFFSET)
+/**
+ * Address of the RES (Reset) Vector in memory: 0xFFFC.
+ *
+ * This points to the first address of the program in memory.
+ */
+#define MORO8_RES_VECTOR_ADDRESS 0xFFFC
+/** Address of the IRQ (Interrupt Request) Vector in memory: 0xFFFE. */
+#define MORO8_IRQ_VECTOR_ADDRESS 0xFFFE
 
 /** Gets the high part of a 16 bit (double word) address */
 #define MORO8_HIGH(address) ((address & 0xFF00) >> 8)
@@ -162,6 +221,107 @@ typedef short moro8_dword;
 #define MORO8_HRAM(offset) ((MORO8_RAM(offset) & 0xFF00) >> 8)
 /** Get the low byte of address at RAM + offset */
 #define MORO8_LRAM(offset) (MORO8_RAM(offset) & 0xFF)
+
+struct moro8_vm;
+
+#if MORO8_WITH_HOOKS
+
+/**
+ * Signature of a hook function for handling opcodes.
+ * 
+ * @note
+ * Available only if built with MORO8_WITH_HOOKS=1
+ * 
+ * @param[in] vm VM instance
+ * @param[in] op Opcode to handle
+ * @return If the instruction was handled.
+ */
+typedef int(*moro8_hook)(struct moro8_vm*, moro8_uword op);
+
+/**
+ * Gets the registered hook function for a specific opcode.
+ *
+ * @note
+ * Available only if built with MORO8_WITH_HOOKS=1
+ * 
+ * @param[in] vm Some vm
+ * @param[in] op Opcode number
+ * @return Registered hook function or NULL.
+ */
+MORO8_PUBLIC(moro8_hook) moro8_get_hook(struct moro8_vm* vm, moro8_uword op);
+
+/**
+ * Registers a hook for handling a specific opcode.
+ * 
+ * Example of registering a hook function for printing the JMP instructions:
+ * @code
+ * int print_jmp(struct moro8_vm* vm, moro8_uword op) {
+ *     printf("JMP");
+ * 
+ *     // Let the vm handle this instruction
+ *     return 0;
+ * }
+ *
+ * moro8_set_hook(vm, MORO8_OP_JMP_ABS, print_jmp);
+ * @endcode
+ *
+ * Beware that it will replace already registered hook if any.
+ *
+ * @note
+ * Available only if built with MORO8_WITH_HOOKS=1
+ * 
+ * @param[in] vm Some vm
+ * @param[in] op Opcode number
+ * @param[in] hook Pointer to hook
+ */
+MORO8_PUBLIC(void) moro8_set_hook(struct moro8_vm* vm, moro8_uword op, moro8_hook hook);
+
+#endif
+
+/** Struct for the state of registers and memory. */
+struct moro8_state {
+	/** Struct containing all registers. */
+    struct registers {
+        /** Program counter. */
+        moro8_udword pc;
+        /** Accumulator: math register. */
+        moro8_uword ac;
+        /** X: index registers. */
+        moro8_uword x;
+        /** Y: index registers. */
+        moro8_uword y;
+        /** Status register. */
+        struct sr
+        {
+            /** Negative. */
+            moro8_uword n;
+            /** Overflow. */
+            moro8_uword v;
+            /** Zero. */
+            moro8_uword z;
+            /** Carry. */
+            moro8_uword c;
+        } sr;
+        /** Stack pointer. */
+        moro8_uword sp;
+    } registers;
+	/** Memory allocated to the vm. */
+    moro8_uword memory[MORO8_MEMORY_SIZE];
+};
+
+/** Struct for the vm emulating the moro8 CPU. */
+struct moro8_vm {
+	/** Current state of the vm. */
+	struct moro8_state state;
+#if MORO8_WITH_HOOKS
+	/**
+	 * Registered hooks for custom handling of opcodes.
+     * @note
+     * Available only if built with MORO8_WITH_HOOKS=1
+	 */
+	moro8_hook hooks[0xFF];
+#endif
+};
 
 /**
  * The required size for a buffer passed to moro8_print not
@@ -275,17 +435,24 @@ enum moro8_opcode
 
 enum moro8_register
 {
-	// Accumulator
+	/** Accumulator register. */
 	MORO8_REGISTER_AC,
-	// Index registers
+	/** Index register. */
 	MORO8_REGISTER_X,
+	/** Index register. */
 	MORO8_REGISTER_Y,
-	// Status register
+	/** Status register. */
 	MORO8_REGISTER_SR,
-	// Stack pointer
-	MORO8_REGISTER_SP,
-	// Number of registers
-	MORO8_REGISTER_MAX
+	/** Negative register. */
+	MORO8_REGISTER_N,
+	/** Overflow register. */
+	MORO8_REGISTER_V,
+	/** Zero register. */
+	MORO8_REGISTER_Z,
+	/** Carry register. */
+	MORO8_REGISTER_C,
+	/** Stack pointer. */
+	MORO8_REGISTER_SP
 };
 
 struct moro8_vm;
@@ -305,7 +472,22 @@ struct moro8_vm;
 MORO8_PUBLIC(struct moro8_vm*) moro8_create();
 
 /**
- * Resets all registers and memory of a vm to initial state.
+ * Initializes a new vm instance.
+ *
+ * This is called implicitly by moro8_create, but must be called
+ * manually otherwise.
+ * @code
+ * struct moro8_vm vm;
+ * moro8_init(&vm);
+ * 
+ * ...
+ * @endcode
+ * @param[in] vm Some vm instance
+ */
+MORO8_PUBLIC(void) moro8_init(struct moro8_vm* vm);
+
+/**
+ * Resets the current state of a vm.
  * @param[in] vm Some vm instance
  */
 MORO8_PUBLIC(void) moro8_reset(struct moro8_vm* vm);
@@ -332,7 +514,7 @@ MORO8_PUBLIC(void) moro8_delete(struct moro8_vm* vm);
  * provides all the required functions to do so. The use
  * case for moro8_as_buffer is more for when you want to save
  * or load the vm on disk.
- * @code
+ * @code{.c}
  * // Get the underlying memory buffer and size
  * size_t size = 0;
  * void* buf = moro8_as_buffer(vm, &size);
@@ -433,22 +615,6 @@ MORO8_PUBLIC(void) moro8_restore(struct moro8_vm* vm, const struct moro8_vm* sna
 MORO8_PUBLIC(int) moro8_equal(const struct moro8_vm* left, const struct moro8_vm* right);
 
 /**
- * Dumps the current vm state to an human-readable string.
- * @param[in] vm Some vm
- * @return String representation of the vm state.
- */
-MORO8_PUBLIC(char*) moro8_print(const struct moro8_vm* vm);
-
-/**
- * Parses the string representation of a vm state.
- * @param[out] vm Some vm
- * @param[in] buf Some buffer
- * @param[in] size Buffer size
- * @return The same vm pointer if there is no errors, NULL otherwise.
- */
-MORO8_PUBLIC(struct moro8_vm*) moro8_parse(struct moro8_vm* vm, const char* buf, size_t size);
-
-/**
  * Loads a program to memory.
  * @param vm vm instance
  * @param prog program address
@@ -478,19 +644,270 @@ MORO8_PUBLIC(moro8_uword) moro8_get_register(const struct moro8_vm* vm, enum mor
 
 MORO8_PUBLIC(void) moro8_set_register(struct moro8_vm* vm, enum moro8_register reg, moro8_uword value);
 
+/**
+ * Gets size bytes from memory starting at offset.
+ *
+ * @code
+ * moro8_uword buffer[4];
+ * 
+ * moro8_get_memory(vm, buffer, 0x1000, 4);
+ * @endcode
+ * @param[in] vm Some vm
+ * @param[in] buffer Pointer to buffer for storing the bytes
+ * @param[in] offset Starting offset in memory
+ * @param[in] size Size of buffer
+ * @return The number of copied bytes.
+ */
 MORO8_PUBLIC(moro8_udword) moro8_get_memory(const struct moro8_vm* vm, moro8_uword* buffer, moro8_udword offset, moro8_udword size);
 
+/**
+ * Fills in the memory starting at offset with size bytes.
+ *
+ * @code
+ * moro8_uword buffer[4] = { ... };
+ * 
+ * moro8_set_memory(vm, buffer, 0x1000, 4);
+ * @endcode
+ * @param[in] vm Some vm
+ * @param[in] buffer Pointer to buffer containing the bytes to copy
+ * @param[in] offset Starting offset in memory
+ * @param[in] size Size of buffer
+ * @return The number of copied bytes.
+ */
 MORO8_PUBLIC(moro8_udword) moro8_set_memory(struct moro8_vm* vm, const moro8_uword* buffer, moro8_udword offset, moro8_udword size);
+
+/**
+ * Gets a single byte from memory.
+ *
+ * @code 
+ * moro8_set_memory_word(vm, 0x1000, 0xFF);
+ *
+ * // Output FF
+ * printf("%02x", moro8_get_memory_word(vm, 0x1000));
+ * @endcode
+ * @param[in] vm Some vm
+ * @param[in] address Memory address
+ * @return Value from memory.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_memory_word(struct moro8_vm* vm, moro8_udword address);
+
+/**
+ * Sets a single byte in memory.
+ *
+ * @code 
+ * moro8_set_memory_word(vm, 0x1000, 0xFF);
+ *
+ * // Output FF
+ * printf("%02x", moro8_get_memory_word(vm, 0x1000));
+ * @endcode
+ * @param[in] vm Some vm
+ * @param[in] address Memory address
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_memory_word(struct moro8_vm* vm, moro8_udword address, moro8_uword value);
+
+/**
+ * Gets a double byte from memory.
+ *
+ * @code 
+ * moro8_set_memory_dword(vm, 0x1000, 0xFF10);
+ *
+ * // Output 10FF
+ * printf("%02x", moro8_get_memory_word(vm, 0x1000));
+ * printf("%02x", moro8_get_memory_word(vm, 0x1001));
+ *
+ * // Output FF10
+ * printf("%04x", moro8_get_memory_dword(vm, 0x1000));
+ * @endcode
+ * @param[in] vm Some vm
+ * @param[in] address Memory address
+ * @return Value from memory.
+ */
+MORO8_PUBLIC(moro8_udword) moro8_get_memory_dword(struct moro8_vm* vm, moro8_udword address);
+
+/**
+ * Sets a double byte in memory with the low byte first.
+ *
+ * @code 
+ * moro8_set_memory_dword(vm, 0x1000, 0xFF10);
+ *
+ * // Output 10FF
+ * printf("%02x", moro8_get_memory_word(vm, 0x1000));
+ * printf("%02x", moro8_get_memory_word(vm, 0x1001));
+ *
+ * // Output FF10
+ * printf("%04x", moro8_get_memory_dword(vm, 0x1000));
+ * @endcode
+ * @param[in] vm Some vm
+ * @param[in] address Memory address
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_memory_dword(struct moro8_vm* vm, moro8_udword address, moro8_udword value);
 
 MORO8_PUBLIC(int) moro8_load_state(struct moro8_vm* vm, const char* path);
 
 MORO8_PUBLIC(int) moro8_dump_state(struct moro8_vm* vm, const char* path);
 
-/** Get/Set a single word in memory */
-#define moro8_get_memory_word(vm, offset, value) moro8_get_memory(vm, &value, offset, 1)
-#define moro8_set_memory_word(vm, offset, value) { const moro8_uword __buffer[1] = {value}; moro8_set_memory(vm, __buffer, offset, 1); }
-/** Set a double word in memory */
-#define moro8_set_memory_dword(vm, offset, value) { const moro8_uword __buffer[2] = {(value & 0xFF00) >> 8, value & 0xFF}; moro8_set_memory(vm, __buffer, offset, 2); }
+#if MORO8_WITH_PARSER
+
+/**
+ * Dumps the current vm state to an human-readable string.
+ * 
+ * @note
+ * Available only if built with MORO8_WITH_PARSER=1
+ * 
+ * @param[in] vm Some vm
+ * @return String representation of the vm state.
+ */
+MORO8_PUBLIC(char*) moro8_print(const struct moro8_vm* vm);
+
+/**
+ * Parses the string representation of a vm state.
+ * 
+ * @note
+ * Available only if built with MORO8_WITH_PARSER=1
+ * 
+ * @param[out] vm Some vm
+ * @param[in] buf Some buffer
+ * @param[in] size Buffer size
+ * @return The same vm pointer if there is no errors, NULL otherwise.
+ */
+MORO8_PUBLIC(struct moro8_vm*) moro8_parse(struct moro8_vm* vm, const char* buf, size_t size);
+
+#endif
+
+#ifdef MORO8_DOXYGEN
+/**
+ * Gets the value in accumulator register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_ac(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in X register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_x(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in Y register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_y(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in status register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_sr(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in N register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_n(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in V register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_v(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in Z register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_z(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in C register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_c(struct moro8_vm* vm) { return 0; }
+/**
+ * Gets the value in stack pointer register.
+ * @param[in] vm Some vm
+ * @return Value from register.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_get_sp(struct moro8_vm* vm) { return 0; }
+/**
+ * Sets the value in accumulator register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_ac(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in X register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_x(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in Y register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_y(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in status register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_sr(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in N register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_n(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in V register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_v(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in Z register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_z(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in C register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_c(struct moro8_vm* vm, moro8_uword value) {}
+/**
+ * Sets the value in stack pointer register.
+ * @param[in] vm Some vm
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_set_sp(struct moro8_vm* vm, moro8_uword value) {}
+#else
+/** Get registers values */
+#define moro8_get_ac(vm) moro8_get_register(vm, MORO8_REGISTER_AC)
+#define moro8_get_x(vm) moro8_get_register(vm, MORO8_REGISTER_X)
+#define moro8_get_y(vm) moro8_get_register(vm, MORO8_REGISTER_Y)
+#define moro8_get_sr(vm) moro8_get_register(vm, MORO8_REGISTER_SR)
+#define moro8_get_n(vm) moro8_get_register(vm, MORO8_REGISTER_N)
+#define moro8_get_v(vm) moro8_get_register(vm, MORO8_REGISTER_V)
+#define moro8_get_z(vm) moro8_get_register(vm, MORO8_REGISTER_Z)
+#define moro8_get_c(vm) moro8_get_register(vm, MORO8_REGISTER_C)
+#define moro8_get_sp(vm) moro8_get_register(vm, MORO8_REGISTER_SP)
+/** Set registers values */
+#define moro8_set_ac(vm, value) moro8_set_register(vm, MORO8_REGISTER_AC, value)
+#define moro8_set_x(vm, value) moro8_set_register(vm, MORO8_REGISTER_X, value)
+#define moro8_set_y(vm, value) moro8_set_register(vm, MORO8_REGISTER_Y, value)
+#define moro8_set_sr(vm, value) moro8_set_register(vm, MORO8_REGISTER_SR, value)
+#define moro8_set_n(vm, value) moro8_set_register(vm, MORO8_REGISTER_N, value)
+#define moro8_set_v(vm, value) moro8_set_register(vm, MORO8_REGISTER_V, value)
+#define moro8_set_z(vm, value) moro8_set_register(vm, MORO8_REGISTER_Z, value)
+#define moro8_set_c(vm, value) moro8_set_register(vm, MORO8_REGISTER_C, value)
+#define moro8_set_sp(vm, value) moro8_set_register(vm, MORO8_REGISTER_SP, value)
+#endif
+
 /** Set memory starting at ZP + offset */
 #define moro8_set_zp(vm, buffer, offset, size) moro8_set_memory(vm, buffer, MORO8_ZP(offset), size)
 /** Get/Set a single word at ZP + offset */
@@ -512,16 +929,6 @@ MORO8_PUBLIC(int) moro8_dump_state(struct moro8_vm* vm, const char* path);
 #define moro8_set_ram_word(vm, offset, value) moro8_set_memory_word(vm, MORO8_RAM(offset), value)
 /** Set a double word at RAM + offset */
 #define moro8_set_ram_dword(vm, offset, value) moro8_set_memory_dword(vm, MORO8_RAM(offset), value)
-/** Get registers values */
-#define moro8_get_a(vm) moro8_get_register(vm, MORO8_REGISTER_A)
-#define moro8_get_x(vm) moro8_get_register(vm, MORO8_REGISTER_X)
-#define moro8_get_y(vm) moro8_get_register(vm, MORO8_REGISTER_Y)
-#define moro8_get_s(vm) moro8_get_register(vm, MORO8_REGISTER_S)
-/** Set registers values */
-#define moro8_set_a(vm, value) moro8_set_register(vm, MORO8_REGISTER_A, value)
-#define moro8_set_x(vm, value) moro8_set_register(vm, MORO8_REGISTER_X, value)
-#define moro8_set_y(vm, value) moro8_set_register(vm, MORO8_REGISTER_Y, value)
-#define moro8_set_s(vm, value) moro8_set_register(vm, MORO8_REGISTER_S, value)
 
 #ifdef __cplusplus
 }

@@ -46,18 +46,12 @@ project(moro8 VERSION ${MORO8_VERSION} LANGUAGES C)
 
 include(ConfigureChecks)
 
-option(WITH_STATIC_LIB "Build a static library" ON)
-option(UNIT_TESTING "Unit Tests Enabled" ON)
-option(DOXYGEN "Docs Enabled" OFF)
-option(MINIMALIST "Strip extra functions from the API" OFF)
-
-if(DOXYGEN)
-set(MORO8_DOXYGEN ${DOXYGEN})
-endif(DOXYGEN)
-
-if(MINIMALIST)
-set(MORO8_MINIMALIST ${MINIMALIST})
-endif(MINIMALIST)
+option(MORO8_STATIC "Build a static library" ON)
+option(MORO8_UNIT_TESTING "Unit Tests Enabled" ON)
+option(MORO8_DOXYGEN "Docs Enabled" OFF)
+option(MORO8_MINIMALIST "Build a minimalist version of this library" OFF)
+option(MORO8_WITH_PARSER "Enable moro8_print and moro8_parse functions" ON)
+option(MORO8_WITH_HOOKS "Enable support for hook functions" ON)
 
 # disallow in-source build
 include(MacroEnsureOutOfSourceBuild)
@@ -85,7 +79,7 @@ target_include_directories(${MORO8_LIB}
                                 ${CMAKE_CURRENT_BINARY_DIR}
                             PUBLIC
                                 ${CMAKE_CURRENT_SOURCE_DIR})
-if (WITH_STATIC_LIB)
+if (MORO8_STATIC)
     
     set(MORO8_STATIC_LIB "${MORO8_LIB}-static")
 
@@ -107,17 +101,17 @@ if (WITH_STATIC_LIB)
 endif()
 
 # include cmocka
-if (UNIT_TESTING)
-    if (NOT WITH_STATIC_LIB)
-        message("Skip unit testing because WITH_STATIC_LIB option is off")
+if (MORO8_UNIT_TESTING)
+    if (NOT MORO8_STATIC)
+        message("Skip unit testing because MORO8_STATIC option is off")
 
     else()
         include(AddCMockaTest) 
         add_subdirectory(tests)
 
-    endif(NOT WITH_STATIC_LIB)
-endif (UNIT_TESTING)
+    endif(NOT MORO8_STATIC)
+endif (MORO8_UNIT_TESTING)
 
-if (DOXYGEN)
+if (MORO8_DOXYGEN)
     add_subdirectory ("docs")
-endif (DOXYGEN)
+endif (MORO8_DOXYGEN)
