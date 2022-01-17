@@ -3,15 +3,15 @@
 [![CI](https://github.com/Nauja/moro8/actions/workflows/CI.yml/badge.svg)](https://github.com/Nauja/moro8/actions/workflows/CI.yml)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Nauja/moro8/master/LICENSE)
 
-moro8 is a 8-bit fantasy CPU written in ANSI C with extensibility and portability in mind.
+moro8 is a 8-bit fantasy CPU based on the 6502 and written in ANSI C with extensibility and portability in mind.
 
 ## Purpose
 
 The ultimate goal of writing moro8 was to:
 
-  * Teach myself more about 8-bit microcontrollers
+  * Learn more about 8-bit microcontrollers
   * Write small programs and games in assembler for fun (see [moro8asm](https://github.com/Nauja/moro8asm))
-  * Make it run programs loaded from an SD card on my Arduino
+  * Make it run programs loaded from an SD card on an Arduino with 6KB of SRAM
   * Compile it to WASM so it can run on the Web (see [moro8.js](https://github.com/Nauja/moro8.js))
 
 ## Usage
