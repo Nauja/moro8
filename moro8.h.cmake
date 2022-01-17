@@ -171,7 +171,7 @@ typedef short moro8_dword;
   */
 #define MORO8_PAGE_SIZE 0x100
  /**
-  * The starting address of the stack in memory: 0x100.
+  * Starting address of the stack in memory: 0x100.
   * 
   * The stack starts after the zero page, thus at address 0x100.
   */
@@ -182,14 +182,30 @@ typedef short moro8_dword;
   * As the stack register is a single word (8-bit), we can address up to 256 bytes.
   */
 #define MORO8_STACK_SIZE 0x100
-/** Offset of the progmem area in memory */
-#define MORO8_PROGMEM_OFFSET 0xFF
-/** Total size of the progmem area */
-#define MORO8_PROGMEM_SIZE 0xFF
-/** Offset of the RAM area in memory */
-#define MORO8_RAM_OFFSET (MORO8_PROGMEM_OFFSET + MORO8_PROGMEM_SIZE)
-/** Total size of the RAM area */
-#define MORO8_RAM_SIZE (MORO8_MEMORY_SIZE - MORO8_RAM_OFFSET)
+/**
+ * Total size of the ROM section in memory.
+ *
+ * This is an arbitrary value but must be big enough to contain the program.
+ */
+#define MORO8_ROM_SIZE 0xFF
+/**
+ * Starting address of the ROM section in memory: MORO8_MEMORY_SIZE - MORO8_ROM_SIZE.
+ * 
+ * The ROM section is always at the high end of memory.
+ */
+#define MORO8_ROM_OFFSET (MORO8_MEMORY_SIZE - MORO8_ROM_SIZE)
+/**
+ * Offset of the RAM section in memory: 0x200.
+ *
+ * The RAM is always at the low end of memory, right after the stack.
+ */
+#define MORO8_RAM_OFFSET 0x200
+/**
+ * Total size of the RAM section in memory: MORO8_ROM_OFFSET - MORO8_RAM_OFFSET.
+ *
+ * This is all memory that is no reserved by the CPU and is not ROM.
+ */
+#define MORO8_RAM_SIZE (MORO8_ROM_OFFSET - MORO8_RAM_OFFSET)
 /**
  * Address of the RES (Reset) Vector in memory: 0xFFFC.
  *
@@ -278,41 +294,82 @@ MORO8_PUBLIC(void) moro8_set_hook(struct moro8_vm* vm, moro8_uword op, moro8_hoo
 
 #endif
 
-/** Struct for the state of registers and memory. */
-struct moro8_state {
-	/** Struct containing all registers. */
-    struct registers {
-        /** Program counter. */
-        moro8_udword pc;
-        /** Accumulator: math register. */
-        moro8_uword ac;
-        /** X: index registers. */
-        moro8_uword x;
-        /** Y: index registers. */
-        moro8_uword y;
-        /** Status register. */
-        struct sr
-        {
-            /** Negative. */
-            moro8_uword n;
-            /** Overflow. */
-            moro8_uword v;
-            /** Zero. */
-            moro8_uword z;
-            /** Carry. */
-            moro8_uword c;
-        } sr;
-        /** Stack pointer. */
-        moro8_uword sp;
-    } registers;
-	/** Memory allocated to the vm. */
-    moro8_uword memory[MORO8_MEMORY_SIZE];
+/** Struct containing registers used by the CPU. */
+struct moro8_registers {
+    /** Program counter. */
+    moro8_udword pc;
+    /** Accumulator: math register. */
+    moro8_uword ac;
+    /** X: index registers. */
+    moro8_uword x;
+    /** Y: index registers. */
+    moro8_uword y;
+    /** Status register. */
+    struct sr
+    {
+        /** Negative. */
+        moro8_uword n;
+        /** Overflow. */
+        moro8_uword v;
+        /** Zero. */
+        moro8_uword z;
+        /** Carry. */
+        moro8_uword c;
+    } sr;
+    /** Stack pointer. */
+    moro8_uword sp;
+};
+
+/**
+ * Struct representing a bus allowing the CPU to read and write memory.
+ *
+ * You can imagine it as a physical bus connected to the CPU and the memory,
+ * allowing the CPU to read and write memory.
+ */
+struct moro8_bus {
+	/**
+	 * Gets the memory at a specific address.
+	 * @param[in] bus Pointer to the bus instance
+	 * @param[in] address Absolute address
+	 * @return Memory at requested address.
+	 */
+	moro8_uword (*get)(const struct moro8_bus* bus, moro8_udword address);
+
+	/**
+	 * Sets the memory at a specific address.
+	 * @param[in] bus Pointer to the bus instance
+	 * @param[in] address Absolute address
+	 * @param[in] value New value
+	 */
+	void (*set)(struct moro8_bus* bus, moro8_udword address, moro8_uword value);
+};
+
+/**
+ * Memory implementation using a continuous array of MORO8_MEMORY_SIZE bytes.
+ *
+ * This is suitable for running on systems with more than MORO8_MEMORY_SIZE
+ * available RAM.
+ */
+struct moro8_array_memory {
+	/**
+	 * The bus connected to this memory.
+	 *
+	 * You have to connect it to the CPU for it to work.
+	 */
+	struct moro8_bus bus;
+	/**
+	 * A continuous array of MORO8_MEMORY_SIZE bytes allowing for fast read
+	 * and write operations.
+	 */
+	moro8_udword buffer[MORO8_MEMORY_SIZE];
 };
 
 /** Struct for the vm emulating the moro8 CPU. */
 struct moro8_vm {
-	/** Current state of the vm. */
-	struct moro8_state state;
+	/** Registers used by the CPU. */
+	struct moro8_registers registers;
+	/** Bus connecting the CPU to memory. */
+	struct moro8_bus* memory;
 #if MORO8_WITH_HOOKS
 	/**
 	 * Registered hooks for custom handling of opcodes.
@@ -456,6 +513,78 @@ enum moro8_register
 };
 
 struct moro8_vm;
+
+/**
+ * Allocates and initializes a new moro8_array_memory instance.
+ * @code
+ * struct moro8_array_memory* memory = moro8_array_memory_create();
+ * 
+ * ...
+ * 
+ * // Don't forget to free up memory
+ * moro8_array_memory_delete(memory);
+ * @endcode
+ * @return Pointer to new moro8_array_memory instance.
+ */
+MORO8_PUBLIC(struct moro8_array_memory*) moro8_array_memory_create();
+
+/**
+ * Initializes an already allocated moro8_array_memory instance.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ * @endcode
+ *
+ * This initializes the bus correctly with:
+ * @code 
+ * memory.bus.get = &moro8_array_memory_get;
+ * memory.bus.set = &moro8_array_memory_set;
+ * @endcode
+ * @param[in] memory Some moro8_array_memory instance
+ */
+MORO8_PUBLIC(void) moro8_array_memory_init(struct moro8_array_memory* memory);
+
+/**
+ * Frees up memory allocated for a moro8_array_memory instance.
+ * @code
+ * struct moro8_array_memory* memory = moro8_array_memory_create();
+ * 
+ * ...
+ * 
+ * // Don't forget to free up memory
+ * moro8_array_memory_delete(memory);
+ * @endcode
+ * @param[in] memory Some moro8_array_memory instance
+ */
+MORO8_PUBLIC(void) moro8_array_memory_delete(struct moro8_array_memory* vm);
+
+/**
+ * Gets memory from an instance of moro8_array_memory.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_uword value = moro8_array_memory_get(&memory, 0xFF);
+ * @endcode
+ * @param[in] memory Some moro8_array_memory instance
+ * @param[in] address Absolute address
+ * @return Memory at requested address.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_array_memory_get(const struct moro8_array_memory* memory, moro8_udword address);
+
+/**
+ * Sets memory to an instance of moro8_array_memory.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_array_memory_set(&memory, 0xFF, 0x1);
+ * @endcode
+ * @param[in] memory Some moro8_array_memory instance
+ * @param[in] address Absolute address
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_array_memory_set(struct moro8_array_memory* memory, moro8_udword address, moro8_uword value);
 
 /**
  * Allocates and returns a pointer to a new vm instance.

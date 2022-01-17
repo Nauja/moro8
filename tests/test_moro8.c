@@ -22,8 +22,8 @@ static void test_readme_addition(void** state) {
     moro8_load(vm, prog, 4);
     moro8_run(vm);
 
-    printf("Result of 2 + 3 is %d", moro8_get_a(vm));
-    assert_int_equal(moro8_get_a(vm), 5);
+    printf("Result of 2 + 3 is %d", moro8_get_ac(vm));
+    assert_int_equal(moro8_get_ac(vm), 5);
 }
 
 /** Test moro8_create returns something */
@@ -36,7 +36,7 @@ static void test_create(void** state) {
     MORO8_ALL_REGISTERS(REGISTER_FUNC);
 #undef REGISTER_FUNC
 
-    moro8_assert_pc_equal(vm, MORO8_PROGMEM_OFFSET);
+    moro8_assert_pc_equal(vm, MORO8_ROM_OFFSET);
 }
 
 /** Test moro8_as_buffer and moro8_from_buffer functions. */

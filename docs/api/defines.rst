@@ -23,5 +23,9 @@ Defines
    defines/moro8_page_size.rst
    defines/moro8_stack_offset.rst
    defines/moro8_stack_size.rst
+   defines/moro8_ram_offset.rst
+   defines/moro8_ram_size.rst
+   defines/moro8_rom_offset.rst
+   defines/moro8_rom_size.rst
    defines/moro8_res_vector_address.rst
    defines/moro8_irq_vector_address.rst

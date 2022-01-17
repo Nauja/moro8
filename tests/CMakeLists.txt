@@ -38,6 +38,7 @@ set(LIBFS_BINARY_DIR "${LIBFS_SOURCE_DIR}/build")
 
 # moro8 tests
 set(_TESTS
+    test_array_memory
     test_moro8
     test_opcodes
 )

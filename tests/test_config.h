@@ -15,6 +15,7 @@
 
 typedef enum moro8_opcode moro8_opcode;
 typedef enum moro8_register moro8_register;
+typedef struct moro8_array_memory moro8_array_memory;
 typedef struct moro8_vm moro8_vm;
 
 #define MORO8_ARRAY_SIZE(foo) (sizeof(foo)/sizeof(foo[0]))
@@ -66,8 +67,8 @@ static void _moro8_assert_memory_equal(struct moro8_vm* vm, const moro8_uword* b
 #define moro8_assert_register_not_equal(vm, reg, value) assert_int_not_equal(moro8_get_register(vm, reg), value)
 #define moro8_assert_pc_equal(vm, value) assert_int_equal(moro8_get_pc(vm), value)
 #define moro8_assert_accumulator_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_A), value)
-#define moro8_assert_x_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_X), value)
-#define moro8_assert_y_equal(vm, value) assert_int_equal(moro8_get_register(vm, MORO8_REGISTER_Y), value)
+#define moro8_assert_x_equal(vm, value) assert_int_equal(moro8_get_x(vm), value)
+#define moro8_assert_y_equal(vm, value) assert_int_equal(moro8_get_y(vm), value)
 #define moro8_assert_memory_equal(vm, buf, offset, size) _moro8_assert_memory_equal(vm, buf, offset, size)
 #define moro8_assert_progmem_equal(vm, buf, offset, size) _moro8_assert_memory_equal(vm, buf, MORO8_PROGMEM_OFFSET + offset, size)
 #define moro8_assert_zp_word_equal(vm, offset, value) { moro8_uword __value = 0; moro8_get_zp_word(vm, offset, __value); assert_int_equal(__value, value); }
