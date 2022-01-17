@@ -3,7 +3,7 @@
 [![CI](https://github.com/Nauja/moro8/actions/workflows/CI.yml/badge.svg)](https://github.com/Nauja/moro8/actions/workflows/CI.yml)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Nauja/moro8/master/LICENSE)
 
-moro8 is a 8-bit fantasy CPU written in ANSI C with portability and minimalism in mind.
+moro8 is a 8-bit fantasy CPU written in ANSI C with extensibility and portability in mind.
 
 ## Purpose
 
