@@ -1,12 +1,12 @@
 .. -*- coding: utf-8 -*-
-.. _moro8_reset:
+.. _moro8_copy:
 
-moro8_reset
------------
+moro8_copy
+----------
 
 .. module:: moro8
 
 .. contents::
    :local:
       
-.. doxygenfunction:: moro8_reset
+.. doxygenfunction:: moro8_copy

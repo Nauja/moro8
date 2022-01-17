@@ -63,7 +63,9 @@ void moro8_array_memory_set(struct moro8_array_memory* memory, moro8_udword addr
 
 moro8_vm* moro8_create()
 {
-    return (moro8_vm*)(malloc(sizeof(moro8_vm)));
+    moro8_vm* vm = (moro8_vm*)(malloc(sizeof(moro8_vm)));
+    moro8_init(vm);
+    return vm;
 }
 
 void moro8_init(moro8_vm* vm)
@@ -71,9 +73,9 @@ void moro8_init(moro8_vm* vm)
     memset(vm, 0, sizeof(moro8_vm));
 }
 
-void moro8_reset(moro8_vm* vm)
+void moro8_delete(moro8_vm* vm)
 {
-    memset(&vm->registers, 0, sizeof(moro8_registers));
+    free(vm);
 }
 
 const void* moro8_as_buffer(const moro8_vm* vm, size_t* size)
@@ -85,55 +87,29 @@ void moro8_from_buffer(moro8_vm* vm, const void* buf, size_t size)
 {
 }
 
-void moro8_backup(moro8_vm* snapshot, const moro8_vm* vm)
+static void _moro8_reset(moro8_vm* vm)
 {
-    memcpy(&snapshot->registers, &vm->registers, sizeof(moro8_registers));
-    for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE; ++i)
-    {
-        snapshot->memory->set(snapshot->memory, i, vm->memory->get(vm->memory, i));
-    }
-}
+    memset(&vm->registers, 0, sizeof(moro8_registers));
 
-void moro8_restore(moro8_vm* vm, const moro8_vm* snapshot)
-{
-    memcpy(&vm->registers, &snapshot->registers, sizeof(moro8_registers));
-    for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE; ++i)
+    if (!vm->memory)
     {
-        vm->memory->set(vm->memory, i, snapshot->memory->get(snapshot->memory, i));
-    }
-}
-
-int moro8_equal(const moro8_vm* left, const moro8_vm* right)
-{
-    if (left == right)
-    {
-        return MORO8_TRUE;
+        return;
     }
 
-    if (left == NULL || right == NULL)
+    for (moro8_udword i = MORO8_MEMORY_SIZE - 1; i >= 0; ++i)
     {
-        return MORO8_FALSE;
-    }
+        vm->memory->set(vm->memory, i, 0);
 
-    if (memcmp(&left->registers, &right->registers, sizeof(moro8_registers)) != 0)
-    {
-        return MORO8_FALSE;
-    }
-
-    for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE; ++i)
-    {
-        if (left->memory->get(left->memory, i) != right->memory->get(right->memory, i))
+        if (i == 0)
         {
-            return MORO8_FALSE;
+            break;
         }
     }
-
-    return MORO8_TRUE;
 }
 
 void moro8_load(moro8_vm* vm, const moro8_uword* prog, moro8_udword size)
 {
-    moro8_reset(vm);
+    _moro8_reset(vm);
     moro8_set_memory(vm, prog, MORO8_ROM_OFFSET, size);
 }
 
@@ -729,9 +705,9 @@ void moro8_set_memory_dword(struct moro8_vm* vm, moro8_udword address, moro8_udw
     MORO8_MEMORY_SET_DWORD(address, value);
 }
 
-void moro8_delete(moro8_vm* vm)
+void moro8_connect_memory(struct moro8_vm* vm, struct moro8_bus* bus)
 {
-    free(vm);
+    vm->memory = bus;
 }
 
 #if MORO8_WITH_PARSER
@@ -862,7 +838,7 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
 #define MORO8_STATE_VALUE 1
 #define MORO8_STATE_COMMENT 2
 
-    moro8_reset(vm);
+    _moro8_reset(vm);
     moro8_uword* value_buffer = NULL;
     int state = MORO8_STATE_IDLE;
     char c = 0;
@@ -1035,6 +1011,73 @@ moro8_hook moro8_get_hook(moro8_vm* vm, moro8_uword op)
 void moro8_set_hook(moro8_vm* vm, moro8_uword op, moro8_hook hook)
 {
     vm->hooks[op] = hook;
+}
+
+#endif
+
+#if !MORO8_MINIMALIST
+
+void moro8_copy(moro8_vm* snapshot, const moro8_vm* vm)
+{
+    memcpy(&snapshot->registers, &vm->registers, sizeof(moro8_registers));
+
+    if (!snapshot->memory || !vm->memory)
+    {
+        return;
+    }
+
+    for (moro8_udword i = MORO8_MEMORY_SIZE - 1; i >= 0; --i)
+    {
+        snapshot->memory->set(snapshot->memory, i, vm->memory->get(vm->memory, i));
+
+        if (i == 0)
+        {
+            break;
+        }
+    }
+}
+
+int moro8_equal(const moro8_vm* left, const moro8_vm* right)
+{
+    if (left == right)
+    {
+        return MORO8_TRUE;
+    }
+
+    if (!left || !right)
+    {
+        return MORO8_FALSE;
+    }
+
+    if (memcmp(&left->registers, &right->registers, sizeof(moro8_registers)) != 0)
+    {
+        return MORO8_FALSE;
+    }
+
+    if (left->memory == right->memory)
+    {
+        return MORO8_TRUE;
+    }
+
+    if (!left->memory || !right->memory)
+    {
+        return MORO8_FALSE;
+    }
+
+    for (moro8_udword i = MORO8_MEMORY_SIZE - 1; i >= 0; --i)
+    {
+        if (left->memory->get(left->memory, i) != right->memory->get(right->memory, i))
+        {
+            return MORO8_FALSE;
+        }
+
+        if (i == 0)
+        {
+            break;
+        }
+    }
+
+    return MORO8_TRUE;
 }
 
 #endif

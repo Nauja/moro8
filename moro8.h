@@ -40,7 +40,6 @@ extern "C"
 
 /* Define to 1 if you build with Doxygen. */
 #ifndef MORO8_DOXYGEN
-//#define MORO8_DOXYGEN 1
 #endif
 
 #ifndef MORO8_MALLOC
@@ -376,7 +375,7 @@ struct moro8_vm {
      * @note
      * Available only if built with MORO8_WITH_HOOKS=1
 	 */
-	moro8_hook hooks[0xFF];
+	moro8_hook hooks[0x100];
 #endif
 };
 
@@ -512,8 +511,6 @@ enum moro8_register
 	MORO8_REGISTER_SP
 };
 
-struct moro8_vm;
-
 /**
  * Allocates and initializes a new moro8_array_memory instance.
  * @code
@@ -587,7 +584,7 @@ MORO8_PUBLIC(moro8_uword) moro8_array_memory_get(const struct moro8_array_memory
 MORO8_PUBLIC(void) moro8_array_memory_set(struct moro8_array_memory* memory, moro8_udword address, moro8_uword value);
 
 /**
- * Allocates and returns a pointer to a new vm instance.
+ * Allocates and initializes a new moro8_vm instance.
  * @code
  * struct moro8_vm* vm = moro8_create();
  * 
@@ -601,7 +598,7 @@ MORO8_PUBLIC(void) moro8_array_memory_set(struct moro8_array_memory* memory, mor
 MORO8_PUBLIC(struct moro8_vm*) moro8_create();
 
 /**
- * Initializes a new vm instance.
+ * Initializes an already allocated moro8_vm instance.
  *
  * This is called implicitly by moro8_create, but must be called
  * manually otherwise.
@@ -616,13 +613,7 @@ MORO8_PUBLIC(struct moro8_vm*) moro8_create();
 MORO8_PUBLIC(void) moro8_init(struct moro8_vm* vm);
 
 /**
- * Resets the current state of a vm.
- * @param[in] vm Some vm instance
- */
-MORO8_PUBLIC(void) moro8_reset(struct moro8_vm* vm);
-
-/**
- * Frees up memory allocated for a vm instance.
+ * Frees up memory allocated for a moro8_vm instance.
  * @code
  * struct moro8_vm* vm = moro8_create();
  * 
@@ -636,112 +627,19 @@ MORO8_PUBLIC(void) moro8_reset(struct moro8_vm* vm);
 MORO8_PUBLIC(void) moro8_delete(struct moro8_vm* vm);
 
 /**
- * Gets the underlying memory buffer for raw manipulations.
- * 
- * Note that the returned buffer is const. Indeed there is no
- * need to directly modify this buffer when the API already
- * provides all the required functions to do so. The use
- * case for moro8_as_buffer is more for when you want to save
- * or load the vm on disk.
- * @code{.c}
- * // Get the underlying memory buffer and size
- * size_t size = 0;
- * void* buf = moro8_as_buffer(vm, &size);
- * 
- * // Write bytes to file
- * FILE* f = fopen(filename, "w");
- * fwrite(buf, size, 1, f);
- * fclose(f);
- * 
- * // Don't access buf after deleting the vm
- * moro8_delete(vm);
+ * Assigns the bus for connecting the CPU to memory.
+ * @code
+ * struct moro8_vm* vm = moro8_create();
+ * struct moro8_array_memory* memory = moro8_array_memory_create();
+ *
+ * moro8_connect_memory(vm, &memory->bus);
+ *
+ * // Disconnect
+ * moro8_connect_memory(vm, NULL);
  * @endcode
  * @param[in] vm Some vm instance
- * @param[out] size Buffer size
- * @return A pointer to the memory buffer used by the vm.
  */
-MORO8_PUBLIC(const void*) moro8_as_buffer(const struct moro8_vm* vm, size_t* size);
-
-/**
- * Initializes a vm from a memory buffer.
- * 
- * Note that the buffer is copied to the vm. This means
- * that you can freely modify or delete the buffer after
- * calling moro8_from_buffer.
- * @code
- * // Fetch file size
- * FILE* f = fopen(filename, "r");
- * fseek(f, 0, SEEK_END);
- * size_t size = ftell(f);
- * fseek(f, 0, SEEK_SET);
- * 
- * // Read bytes from file
- * void* buf = malloc(size);
- * fread(buf, size, 1, f);
- * fclose(f);
- * 
- * // Initialize vm from memory buffer and size
- * moro8_from_buffer(vm, buf, size);
- * 
- * free(buf);
- * @endcode
- * @param[in] vm Some vm instance
- * @param[in] buf Some memory buffer
- * @param[in] size Buffer size
- */
-MORO8_PUBLIC(void) moro8_from_buffer(struct moro8_vm* vm, const void* buf, size_t size);
-
-/**
- * Creates a snapshot from a vm.
- * @code
- * // Execute next instruction
- * moro8_step(vm);
- * 
- * // Backup the current state
- * moro8_vm* snapshot = moro8_create();
- * moro8_backup(snapshot, vm);
- * 
- * // Execute next instruction
- * moro8_step(vm);
- * 
- * // Restore previous state
- * moro8_restore(vm, snapshot);
- * moro8_delete(snapshot);
- * @endcode
- * @param[out] snapshot VM to copy to
- * @param[in] vm VM to copy from
- */
-MORO8_PUBLIC(void) moro8_backup(struct moro8_vm* snapshot, const struct moro8_vm* vm);
-
-/**
- * Restores a snapshot to a vm.
- * @code
- * // Execute next instruction
- * moro8_step(vm);
- * 
- * // Backup the current state
- * moro8_vm* snapshot = moro8_create();
- * moro8_backup(snapshot, vm);
- * 
- * // Execute next instruction
- * moro8_step(vm);
- * 
- * // Restore previous state
- * moro8_restore(vm, snapshot);
- * moro8_delete(snapshot);
- * @endcode
- * @param[out] vm VM to copy to
- * @param[in] snapshot VM to copy from
- */
-MORO8_PUBLIC(void) moro8_restore(struct moro8_vm* vm, const struct moro8_vm* snapshot);
-
-/**
- * Returns true only if the two vm are in the exact same state.
- * @param[in] left Some vm
- * @param[in] right Another vm
- * @return If the two vm are the same.
- */
-MORO8_PUBLIC(int) moro8_equal(const struct moro8_vm* left, const struct moro8_vm* right);
+MORO8_PUBLIC(void) moro8_connect_memory(struct moro8_vm* vm, struct moro8_bus* bus);
 
 /**
  * Loads a program to memory.
@@ -902,6 +800,46 @@ MORO8_PUBLIC(char*) moro8_print(const struct moro8_vm* vm);
  * @return The same vm pointer if there is no errors, NULL otherwise.
  */
 MORO8_PUBLIC(struct moro8_vm*) moro8_parse(struct moro8_vm* vm, const char* buf, size_t size);
+
+#endif
+
+#if !MORO8_MINIMALIST
+
+/**
+ * Creates a snapshot from a vm.
+ * @code
+ * // Execute next instruction
+ * moro8_step(vm);
+ * 
+ * // Backup the current state
+ * moro8_vm* snapshot = moro8_create();
+ * moro8_copy(snapshot, vm);
+ * 
+ * // Execute next instruction
+ * moro8_step(vm);
+ * 
+ * // Restore previous state
+ * moro8_copy(vm, snapshot);
+ * moro8_delete(snapshot);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[out] snapshot VM to copy to
+ * @param[in] vm VM to copy from
+ */
+MORO8_PUBLIC(void) moro8_copy(struct moro8_vm* snapshot, const struct moro8_vm* vm);
+
+/**
+ * Returns true only if the two vm are in the exact same state.
+ * 
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] left Some vm
+ * @param[in] right Another vm
+ * @return If the two vm are the same.
+ */
+MORO8_PUBLIC(int) moro8_equal(const struct moro8_vm* left, const struct moro8_vm* right);
 
 #endif
 

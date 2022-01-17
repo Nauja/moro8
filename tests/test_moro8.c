@@ -11,6 +11,59 @@ static void test_types(void** state) {
     assert_int_equal(sizeof(moro8_dword), 2);
 }
 
+/** Test allocating a new vm */
+static void test_create(void** state) {
+    moro8_vm* vm = moro8_create();
+    assert_non_null(vm);
+    assert_null(vm->memory);
+
+    moro8_delete(vm);
+}
+
+/** Test initializing an already allocated vm */
+static void test_init(void** state) {
+    moro8_vm vm;
+    moro8_init(&vm);
+    assert_null(vm.memory);
+}
+
+/** Test connecting moro8_array_memory */
+static void test_connect_memory(void** state) {
+    moro8_vm vm;
+    moro8_init(&vm);
+    assert_null(vm.memory);
+
+    moro8_array_memory memory;
+    moro8_connect_memory(&vm, (moro8_bus*)&memory);
+    assert_ptr_equal(vm.memory, &memory.bus);
+
+    moro8_connect_memory(&vm, NULL);
+    assert_null(vm.memory);
+}
+
+/** Test creating a backup and restoring it */
+static void test_copy(void** state) {
+    moro8_vm* vm = *state;
+
+    moro8_set_progmem_word(vm, 0, 0xFF);
+
+    // Backup state
+    moro8_vm* snapshot = moro8_create();
+    moro8_array_memory* memory = moro8_array_memory_create();
+    moro8_connect_memory(snapshot, memory);
+    assert_false(moro8_equal(vm, snapshot));
+    moro8_copy(snapshot, vm);
+    assert_true(moro8_equal(vm, snapshot));
+
+    // Reset state
+    moro8_set_progmem_word(vm, 0, 0);
+    assert_false(moro8_equal(vm, snapshot));
+
+    // Restore state
+    moro8_copy(vm, snapshot);
+    assert_true(moro8_equal(vm, snapshot));
+}
+
 /** Test shown in README.md */
 static void test_readme_addition(void** state) {
     moro8_vm* vm = *state;
@@ -24,57 +77,6 @@ static void test_readme_addition(void** state) {
 
     printf("Result of 2 + 3 is %d", moro8_get_ac(vm));
     assert_int_equal(moro8_get_ac(vm), 5);
-}
-
-/** Test moro8_create returns something */
-static void test_create(void** state) {
-    moro8_vm* vm = *state;
-    assert_non_null(vm);
-
-    // Check initial state
-#define REGISTER_FUNC(reg) moro8_assert_register_equal(vm, reg, 0)
-    MORO8_ALL_REGISTERS(REGISTER_FUNC);
-#undef REGISTER_FUNC
-
-    moro8_assert_pc_equal(vm, MORO8_ROM_OFFSET);
-}
-
-/** Test moro8_as_buffer and moro8_from_buffer functions. */
-static void test_buffer(void** state) {
-    moro8_vm* vm1 = *state;
-    assert_non_null(vm1);
-
-    size_t size = 0;
-    const void* buf = moro8_as_buffer(vm1, &size);
-    assert_int_not_equal(size, 0);
-    assert_non_null(buf);
-
-    moro8_vm* vm2 = moro8_create();
-    moro8_from_buffer(vm2, buf, size);
-    assert_true(moro8_equal(vm1, vm2));
-    moro8_delete(vm2);
-}
-
-/** Test moro8_snapshot works correctly */
-static void test_snapshot(void** state) {
-    moro8_vm* vm = *state;
-    assert_non_null(vm);
-
-    moro8_set_progmem_word(vm, 0, 0xFF);
-
-    // Backup state
-    moro8_vm* snapshot = moro8_create();
-    assert_false(moro8_equal(vm, snapshot));
-    moro8_backup(snapshot, vm);
-    assert_true(moro8_equal(vm, snapshot));
-
-    // Reset state
-    moro8_reset(vm);
-    assert_false(moro8_equal(vm, snapshot));
-
-    // Restore state
-    moro8_restore(vm, snapshot);
-    assert_true(moro8_equal(vm, snapshot));
 }
 
 /** Test moro8_set_register on a single register */
@@ -188,10 +190,11 @@ static void test_parse(void** state) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_types),
+        cmocka_unit_test(test_create),
+        cmocka_unit_test(test_init),
+        cmocka_unit_test(test_connect_memory),
+        cmocka_unit_test_setup_teardown(test_copy, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_readme_addition, moro8_setup_vm, moro8_delete_vm),
-        cmocka_unit_test_setup_teardown(test_create, moro8_setup_vm, moro8_delete_vm),
-        cmocka_unit_test_setup_teardown(test_buffer, moro8_setup_vm, moro8_delete_vm),
-        cmocka_unit_test_setup_teardown(test_snapshot, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_register, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_word, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_dword, moro8_setup_vm, moro8_delete_vm),

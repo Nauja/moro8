@@ -15,6 +15,8 @@
 
 typedef enum moro8_opcode moro8_opcode;
 typedef enum moro8_register moro8_register;
+typedef struct moro8_bus moro8_bus;
+typedef struct moro8_registers moro8_registers;
 typedef struct moro8_array_memory moro8_array_memory;
 typedef struct moro8_vm moro8_vm;
 
@@ -86,13 +88,18 @@ static void moro8_assert_output_dir(char (*buf)[LIBFS_MAX_PATH])
 
 /** Setup a new VM before running a test */
 static int moro8_setup_vm(void** state) {
-    *state = (void*)moro8_create();
+	moro8_vm* vm = moro8_create();
+	moro8_array_memory* memory = moro8_array_memory_create();
+	moro8_connect_memory(vm, (moro8_bus*)memory);
+    *state = (void*)vm;
     return 0;
 }
 
 /** Delete the vm after running a test */
 static int moro8_delete_vm(void** state) {
-    moro8_delete((struct moro8_vm*)*state);
+	moro8_vm* vm = (struct moro8_vm*)*state;
+	moro8_array_memory_delete((moro8_array_memory*)vm->memory);
+    moro8_delete(vm);
     *state = NULL;
     return 0;
 }
