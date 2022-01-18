@@ -21,6 +21,17 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 1000
+    - name: build libfs
+      shell: bash
+      run: |
+          EVENT_CMAKE_OPTIONS="-DLIBFS_STATIC=ON"
+          cd vendor/libfs
+          mkdir -p build
+          cd build
+          echo [cmake]: cmake .. $EVENT_CMAKE_OPTIONS
+          cmake .. $EVENT_CMAKE_OPTIONS || (rm -rf * && cmake .. $EVENT_CMAKE_OPTIONS)
+          cmake --build .
+          make
     - name: install docs dependencies
       run: |
         sudo apt-get update
