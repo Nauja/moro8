@@ -25,32 +25,23 @@ It is portable because:
 
 ## Usage
 
-The first thing is to setup the vm:
+This is how you can load a program to ROM and run it:
 
 ```c
 #include "moro8.h"
 
+// Initialize the vm
 struct moro8_vm vm;
 moro8_init(&vm);
 
+// Initialize the memory
 struct moro8_array_memory memory;
 moro8_array_memory_init(&memory);
 
 // Link vm to memory
 moro8_set_memory_bus(&vm, &memory);
-```
 
-You can notice that we have two distinct objects, the vm itself, and the memory.
-But why is that so ?
-
-Well, while the vm has a maximum memory of 64KB that could have easily been hard coded, I chose to design the library
-so that the memory is separated from the vm and can easily be implemented in different ways. This is to allow for different
-strategies such as some pagination system when running on a microcontroller with less than 64KB which is the case when
-running on Arduino.
-
-Then you can load a program to ROM and run it with:
-
-```c
+// Load this small program to ROM and run
 moro8_uword prog[] = {
     0xA9, 0x02, // LDA #$02
     0x69, 0x03  // ADC #$03
@@ -58,8 +49,17 @@ moro8_uword prog[] = {
 moro8_load(&vm, prog, 4);
 moro8_run(&vm);
 
+// Print result in accumulator register
 printf("Result of 2 + 3 is %d", moro8_get_a(&vm));
 ```
+
+You can notice that we have two distinct objects, the vm itself, and the memory.
+But why is that so ?
+
+Well, while the vm has a maximum memory of 64KB that could have easily been hard coded, I chose to design the library
+so that the memory stays separated from the vm and can easily be implemented in different ways. This is to allow for different
+strategies such as some pagination system when running on a microcontroller with less than 64KB which is the case when
+running on Arduino.
 
 Check the [documentation](https://moro8.readthedocs.io/en/latest/) to find more examples and learn about the API.
 
@@ -118,6 +118,9 @@ You can change the build process with a list of different options that you can p
   * `-DMORO8_STATIC=On`: Enable building as static library. (on by default)
   * `-DMORO8_UNIT_TESTING=On`: Enable building the tests. (on by default)
   * `-DMORO8_DOXYGEN=On`: Enable building the docs. (off by default)
+  * `-DMORO8_MINIMALIST=On`: Strip some extra functions. (off by default)
+  * `-DMORO8_WITH_PARSER=On`: Enable moro8_print and moro8_parse functions. (on by default)
+  * `-DMORO8_WITH_HANDLERS=On`: Enable support for custom opcode handlers. (on by default)
 
 ## Build with Visual Studio
 
