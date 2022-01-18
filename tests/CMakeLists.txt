@@ -31,8 +31,7 @@ endif()
 add_dependencies(cmocka_vendor cmocka)
 
 # libfs
-#set(LIBFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vendor/libfs")
-set(LIBFS_SOURCE_DIR "F:/libfs")
+set(LIBFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vendor/libfs")
 set(LIBFS_INCLUDE_DIR "${LIBFS_SOURCE_DIR}")
 set(LIBFS_BINARY_DIR "${LIBFS_SOURCE_DIR}/build")
 
