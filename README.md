@@ -16,7 +16,7 @@ The ultimate goal of writing moro8 was to:
 
 It is extensible because:
 
-  * You can register hooks at runtime for handling additional opcodes providing new features
+  * You can register handlers at runtime for handling additional opcodes providing new features
   * You can completely change how the memory is accessed and even implement some pagination
 
 It is portable because:

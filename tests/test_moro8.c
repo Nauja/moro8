@@ -34,10 +34,10 @@ static void test_connect_memory(void** state) {
     assert_null(vm.memory);
 
     moro8_array_memory memory;
-    moro8_connect_memory(&vm, (moro8_bus*)&memory);
+    moro8_set_memory_bus(&vm, (moro8_bus*)&memory);
     assert_ptr_equal(vm.memory, &memory.bus);
 
-    moro8_connect_memory(&vm, NULL);
+    moro8_set_memory_bus(&vm, NULL);
     assert_null(vm.memory);
 }
 
@@ -45,23 +45,26 @@ static void test_connect_memory(void** state) {
 static void test_copy(void** state) {
     moro8_vm* vm = *state;
 
-    moro8_set_progmem_word(vm, 0, 0xFF);
+    moro8_set_memory_word(vm, MORO8_ROM_OFFSET, 0xFF);
 
     // Backup state
     moro8_vm* snapshot = moro8_create();
     moro8_array_memory* memory = moro8_array_memory_create();
-    moro8_connect_memory(snapshot, memory);
+    moro8_set_memory_bus(snapshot, (moro8_bus*)memory);
     assert_false(moro8_equal(vm, snapshot));
     moro8_copy(snapshot, vm);
     assert_true(moro8_equal(vm, snapshot));
 
     // Reset state
-    moro8_set_progmem_word(vm, 0, 0);
+    moro8_set_memory_word(vm, MORO8_ROM_OFFSET, 0);
     assert_false(moro8_equal(vm, snapshot));
 
     // Restore state
     moro8_copy(vm, snapshot);
     assert_true(moro8_equal(vm, snapshot));
+
+    moro8_array_memory_delete(memory);
+    moro8_delete(snapshot);
 }
 
 /** Test shown in README.md */
@@ -77,37 +80,6 @@ static void test_readme_addition(void** state) {
 
     printf("Result of 2 + 3 is %d", moro8_get_ac(vm));
     assert_int_equal(moro8_get_ac(vm), 5);
-}
-
-/** Test moro8_set_register on a single register */
-static void _test_set_register(moro8_register reg)
-{
-    moro8_vm* vm = moro8_create();
-
-#define REGISTER_FUNC(reg) moro8_assert_register_equal(vm, reg, 0)
-    // All registers must be 0
-    MORO8_ALL_REGISTERS(REGISTER_FUNC);
-
-    // Assign the reg register
-#define REGISTER_VALUE 0x1    
-    moro8_set_register(vm, reg, REGISTER_VALUE);
-
-    // Other registers must be 0
-    MORO8_OTHER_REGISTERS(REGISTER_FUNC, reg);
-
-    // The reg register must have the right value
-    moro8_assert_register_equal(vm, reg, REGISTER_VALUE);
-#undef REGISTER_VALUE
-#undef REGISTER_FUNC
-
-    moro8_delete(vm);
-}
-
-/** Test moro8_set_register on each registers */
-static void test_set_register(void** state) {
-    moro8_vm* vm = *state;
-
-    MORO8_ALL_REGISTERS(_test_set_register);
 }
 
 /** Test setting a single word to memory. */
@@ -162,28 +134,33 @@ static void test_parse(void** state) {
     char buf[LIBFS_MAX_PATH];
     fs_assert_join_path(&buf, output_dir, "test_print.txt");
 
-    // Print vm1 state and write to file
-    char* dump = moro8_print(vm1);
-    assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE));
-    free(dump);
+    // Print vm1 state and write to test_print.txt
+    char dump[MORO8_PRINT_BUFFER_SIZE];
+    assert_int_equal(moro8_print(vm1, dump, MORO8_PRINT_BUFFER_SIZE), MORO8_PRINT_BUFFER_SIZE - 1);
+    assert_true(dump[MORO8_PRINT_BUFFER_SIZE - 1] == '\0');
+    assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE - 1)); // MORO8_PRINT_BUFFER_SIZE count the null-terminating character
+
+    // Create another vm
+    moro8_vm* vm2 = moro8_create();
+    vm2->memory = (moro8_bus*)moro8_array_memory_create();
 
     // Read file and parse vm state
-    moro8_vm* vm2 = moro8_create();
-
     size_t size = 0;
-    dump = fs_assert_read_file(buf, &size);
-    moro8_parse(vm2, dump, size);
-    free(dump);
+    void* content = fs_assert_read_file(buf, &size);
+    assert_int_equal(size, MORO8_PRINT_BUFFER_SIZE - 1);
+    moro8_parse(vm2, content, size);
+    free(content);
 
-    // Print vm2 state and write to file
-    dump = moro8_print(vm2);
+    // Print vm2 state and write to test_print2.txt
+    assert_int_equal(moro8_print(vm2, dump, MORO8_PRINT_BUFFER_SIZE), MORO8_PRINT_BUFFER_SIZE - 1);
+    assert_true(dump[MORO8_PRINT_BUFFER_SIZE - 1] == '\0');
     fs_assert_join_path(&buf, output_dir, "test_print2.txt");
-    assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE));
-    free(dump);
+    assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE - 1)); // MORO8_PRINT_BUFFER_SIZE count the null-terminating character
 
     // Check both vm are equal
     assert_true(moro8_equal(vm1, vm2));
 
+    moro8_array_memory_delete((moro8_array_memory*)vm2->memory);
     moro8_delete(vm2);
 }
 
@@ -195,7 +172,6 @@ int main(void) {
         cmocka_unit_test(test_connect_memory),
         cmocka_unit_test_setup_teardown(test_copy, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_readme_addition, moro8_setup_vm, moro8_delete_vm),
-        cmocka_unit_test_setup_teardown(test_set_register, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_word, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_dword, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_dword_oom, moro8_setup_vm, moro8_delete_vm),

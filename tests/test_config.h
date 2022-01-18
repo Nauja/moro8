@@ -20,20 +20,6 @@ typedef struct moro8_registers moro8_registers;
 typedef struct moro8_array_memory moro8_array_memory;
 typedef struct moro8_vm moro8_vm;
 
-#define MORO8_ARRAY_SIZE(foo) (sizeof(foo)/sizeof(foo[0]))
-
-#define MORO8_ALL_REGISTERS(fun) \
-    fun(MORO8_REGISTER_AC); \
-    fun(MORO8_REGISTER_X); \
-    fun(MORO8_REGISTER_Y); \
-    fun(MORO8_REGISTER_SP)
-
-#define MORO8_OTHER_REGISTERS(fun, reg) \
-    if (MORO8_REGISTER_AC != reg) fun(MORO8_REGISTER_AC); \
-    if (MORO8_REGISTER_X != reg) fun(MORO8_REGISTER_X); \
-    if (MORO8_REGISTER_Y != reg) fun(MORO8_REGISTER_Y); \
-    if (MORO8_REGISTER_SP != reg) fun(MORO8_REGISTER_SP)
-
 static struct moro8_vm* _moro8_create()
 {
 	struct moro8_vm* vm = moro8_create();
@@ -89,8 +75,7 @@ static void moro8_assert_output_dir(char (*buf)[LIBFS_MAX_PATH])
 /** Setup a new VM before running a test */
 static int moro8_setup_vm(void** state) {
 	moro8_vm* vm = moro8_create();
-	moro8_array_memory* memory = moro8_array_memory_create();
-	moro8_connect_memory(vm, (moro8_bus*)memory);
+	vm->memory = (moro8_bus*)moro8_array_memory_create();
     *state = (void*)vm;
     return 0;
 }

@@ -51,7 +51,7 @@ option(MORO8_UNIT_TESTING "Unit Tests Enabled" ON)
 option(MORO8_DOXYGEN "Docs Enabled" OFF)
 option(MORO8_MINIMALIST "Build a minimalist version of this library" OFF)
 option(MORO8_WITH_PARSER "Enable moro8_print and moro8_parse functions" ON)
-option(MORO8_WITH_HOOKS "Enable support for hook functions" ON)
+option(MORO8_WITH_HANDLERS "Enable support for custom opcode handlers" ON)
 
 # disallow in-source build
 include(MacroEnsureOutOfSourceBuild)

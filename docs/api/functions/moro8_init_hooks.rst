@@ -1,7 +1,7 @@
 .. -*- coding: utf-8 -*-
-.. _moro8_with_hooks:
+.. _moro8_init_hooks:
 
-MORO8_WITH_HOOKS
+moro8_init_hooks
 ----------------
 
 .. module:: moro8
@@ -9,4 +9,4 @@ MORO8_WITH_HOOKS
 .. contents::
    :local:
       
-.. doxygendefine:: MORO8_WITH_HOOKS
+.. doxygenfunction:: moro8_init_hooks

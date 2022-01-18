@@ -1,7 +1,7 @@
 .. -*- coding: utf-8 -*-
-.. _moro8_from_buffer:
+.. _moro8_get_handler:
 
-moro8_from_buffer
+moro8_get_handler
 -----------------
 
 .. module:: moro8
@@ -9,4 +9,4 @@ moro8_from_buffer
 .. contents::
    :local:
       
-.. doxygenfunction:: moro8_from_buffer
+.. doxygenfunction:: moro8_get_handler

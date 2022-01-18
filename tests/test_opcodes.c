@@ -31,15 +31,18 @@ void test_func(void** initial_state) {
     moro8_step(vm);
 
     // Print output state
-    const char* output = moro8_print(vm);
+    char output[1093];
+    moro8_print(vm, output, 1093);
     fs_assert_write_file(state->output, output, 1092);
 
     // Compare expected state
     size_t size = 0;
     const char* expected = (const char*)fs_assert_read_file(state->expected, &size);
     moro8_vm* vm2 = moro8_assert_create();
+    vm2->memory = (moro8_bus*)moro8_array_memory_create();
     moro8_assert_parse(vm2, expected, size);
     moro8_assert_equal(vm, vm2);
+    moro8_array_memory_delete((moro8_array_memory*)vm2->memory);
     moro8_delete(vm2);
 }
 
@@ -54,6 +57,7 @@ int setup(void** initial_state)
 
     // Parse test
     state->vm = moro8_assert_create();
+    state->vm->memory = (moro8_bus*)moro8_array_memory_create();
     assert_true(moro8_parse(state->vm, buf, size));
 
     return 0;
@@ -64,6 +68,7 @@ int teardown(void** initial_state)
     test_state* state = (test_state*)*initial_state;
 
     // Delete vm
+    moro8_array_memory_delete((moro8_array_memory*)state->vm->memory);
     moro8_delete(state->vm);
     free(state);
 
@@ -92,9 +97,6 @@ int main(void) {
 
     struct CMUnitTest* test = NULL;
     size_t test_index = 0;
-    char test_file[LIBFS_MAX_PATH];
-    void* vm_buf = NULL;
-    size_t vm_size = 0;
 
     // Load all tests
     while(fs_read_dir(it))
@@ -113,7 +115,7 @@ int main(void) {
         // Setup test
         test = &tests[test_index];
         test->name = (char*)malloc(strlen(it->path));
-        strcpy(test->name, it->path);
+        strcpy((char*)test->name, it->path);
         test->test_func = test_func;
         test->initial_state = (void*)state;
         test->setup_func = setup;

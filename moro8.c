@@ -12,9 +12,51 @@
 #include <string.h>
 #endif
 
+typedef struct moro8_hooks moro8_hooks;
+typedef struct moro8_registers moro8_registers;
+typedef struct moro8_bus moro8_bus;
+typedef struct moro8_vm moro8_vm;
+typedef struct moro8_array_memory moro8_array_memory;
+typedef enum moro8_register moro8_register;
+
+#if defined(_MSC_VER)
+/* work around MSVC error C2322: '...' address of dllimport '...' is not static */
+static void* MORO8_CDECL internal_malloc(size_t size)
+{
+    return MORO8_MALLOC(size);
+}
+
+static void MORO8_CDECL internal_free(void* pointer)
+{
+    MORO8_FREE(pointer);
+}
+#else
+#define internal_malloc MORO8_MALLOC
+#define internal_free MORO8_FREE
+#endif
+
+static moro8_hooks moro8_global_hooks = {
+    internal_malloc,
+    internal_free
+};
+
+void moro8_init_hooks(struct moro8_hooks* hooks)
+{
+    moro8_global_hooks.malloc_fn = hooks->malloc_fn;
+    moro8_global_hooks.free_fn = hooks->free_fn;
+}
+
+#define _MORO8_MALLOC moro8_global_hooks.malloc_fn
+#define _MORO8_FREE moro8_global_hooks.free_fn
+
 #define MORO8_TRUE 1
 #define MORO8_FALSE 0
 
+/** Gets the high part of a double word (16-bit) address. */
+#define MORO8_HIGH(address) ((address & 0xFF00) >> 8)
+/** Gets the low part of a double word (16-bit) address. */
+#define MORO8_LOW(address) (address & 0xFF)
+/** Easier access to registers. */
 #define MORO8_PC vm->registers.pc
 #define MORO8_AC vm->registers.ac
 #define MORO8_X vm->registers.x
@@ -25,17 +67,13 @@
 #define MORO8_Z vm->registers.sr.z
 #define MORO8_V vm->registers.sr.v
 #define MORO8_N vm->registers.sr.n
+/** Easier access to memory. */
 #define MORO8_GET_MEM(addr) vm->memory->get(vm->memory, addr)
 #define MORO8_SET_MEM(addr, value) vm->memory->set(vm->memory, addr, value)
 
-typedef struct moro8_registers moro8_registers;
-typedef struct moro8_vm moro8_vm;
-typedef struct moro8_array_memory moro8_array_memory;
-typedef enum moro8_register moro8_register;
-
 moro8_array_memory* moro8_array_memory_create()
 {
-    moro8_array_memory* memory = (moro8_array_memory*)MORO8_MALLOC(sizeof(moro8_array_memory));
+    moro8_array_memory* memory = (moro8_array_memory*)_MORO8_MALLOC(sizeof(moro8_array_memory));
     moro8_array_memory_init(memory);
     return memory;
 }
@@ -44,11 +82,13 @@ void moro8_array_memory_init(moro8_array_memory* memory)
 {
     memory->bus.get = &moro8_array_memory_get;
     memory->bus.set = &moro8_array_memory_set;
+
+    memset(memory->buffer, 0, MORO8_MEMORY_SIZE);
 }
 
 void moro8_array_memory_delete(moro8_array_memory* memory)
 {
-    free(memory);
+    _MORO8_FREE(memory);
 }
 
 moro8_uword moro8_array_memory_get(const struct moro8_array_memory* memory, moro8_udword address)
@@ -63,7 +103,7 @@ void moro8_array_memory_set(struct moro8_array_memory* memory, moro8_udword addr
 
 moro8_vm* moro8_create()
 {
-    moro8_vm* vm = (moro8_vm*)(malloc(sizeof(moro8_vm)));
+    moro8_vm* vm = (moro8_vm*)_MORO8_MALLOC(sizeof(moro8_vm));
     moro8_init(vm);
     return vm;
 }
@@ -75,7 +115,7 @@ void moro8_init(moro8_vm* vm)
 
 void moro8_delete(moro8_vm* vm)
 {
-    free(vm);
+    _MORO8_FREE(vm);
 }
 
 const void* moro8_as_buffer(const moro8_vm* vm, size_t* size)
@@ -124,9 +164,9 @@ size_t moro8_step(moro8_vm* vm)
 {
     moro8_uword instruction = MORO8_GET_MEM(vm->registers.pc);
 
-#if MORO8_WITH_HOOKS
-    // Lets custom hooks handle the instruction
-    if (vm->hooks[instruction] && vm->hooks[instruction](vm, instruction))
+#if MORO8_WITH_HANDLERS
+    // Lets custom handlers handle the instruction
+    if (vm->handlers[instruction] && vm->handlers[instruction](vm, instruction))
     {
         return MORO8_TRUE;
     }
@@ -685,131 +725,145 @@ moro8_udword moro8_set_memory(moro8_vm* vm, const moro8_uword* buffer, moro8_udw
     return size;
 }
 
-moro8_uword moro8_get_memory_word(struct moro8_vm* vm, moro8_udword address)
-{
-    return vm->memory->get(vm->memory, address);
-}
-
-void moro8_set_memory_word(struct moro8_vm* vm, moro8_udword address, moro8_uword value)
-{
-    vm->memory->set(vm->memory, address, value);
-}
-
-moro8_udword moro8_get_memory_dword(struct moro8_vm* vm, moro8_udword address)
-{
-    return MORO8_MEMORY_DWORD(address);
-}
-
-void moro8_set_memory_dword(struct moro8_vm* vm, moro8_udword address, moro8_udword value)
-{
-    MORO8_MEMORY_SET_DWORD(address, value);
-}
-
-void moro8_connect_memory(struct moro8_vm* vm, struct moro8_bus* bus)
+void moro8_set_memory_bus(moro8_vm* vm, moro8_bus* bus)
 {
     vm->memory = bus;
+}
+
+moro8_bus* moro8_get_memory_bus(moro8_vm* vm)
+{
+    return vm->memory;
 }
 
 #if MORO8_WITH_PARSER
 
 /** Print a single 0-15 value as a single hex character */
-static inline char* moro8_print_hex(char* buf, char value)
+static inline void moro8_print_hex(char value, char** buf, size_t* size)
 {
-    *buf++ = (value >= 0 && value <= 9) ? ('0' + value) : ('A' + (value - 10));
-    return buf;
+    if (*size >= 1)
+    {
+        (*size)--;
+        *buf[0] = (char)((value >= 0 && value <= 9) ? ('0' + value) : ('A' + (value - 10)));
+    }
+
+    (*buf)++;
 }
 
 /** Print a single word as 00 */
-static inline char* moro8_print_word(char* buf, moro8_uword value)
+static inline void moro8_print_word(moro8_uword value, char** buf, size_t* size)
 {
-    buf = moro8_print_hex(buf, (value & 0xF0) >> 4);
-    return moro8_print_hex(buf, value & 0xF);
+    moro8_print_hex((value & 0xF0) >> 4, buf, size);
+    moro8_print_hex(value & 0xF, buf, size);
+}
+
+static inline void moro8_print_char(char value, char** buf, size_t* size)
+{
+    if (*size >= 1)
+    {
+        (*size)--;
+        *buf[0] = value;
+    }
+
+    (*buf)++;
+}
+
+static inline void moro8_print_string(const char* value, char** buf, size_t* size)
+{
+    size_t written = snprintf(*buf, *size, value);
+
+    if (written > *size)
+    {
+        *size = 0;
+    }
+    else
+    {
+        *size -= written;
+    }
+
+    *buf += written;
 }
 
 /** Print a double word as LL HH */
-static inline char* moro8_print_dword(char* buf, moro8_udword value)
+static inline void moro8_print_dword(moro8_udword value, char** buf, size_t* size)
 {
-    buf = moro8_print_word(buf, (moro8_uword)MORO8_LOW(value));
-    *buf++ = ' ';
-    return moro8_print_word(buf, (moro8_uword)MORO8_HIGH(value));
+    moro8_print_word((moro8_uword)MORO8_LOW(value), buf, size);
+    moro8_print_char(' ', buf, size);
+    moro8_print_word((moro8_uword)MORO8_HIGH(value), buf, size);
 }
 
 /** Print REG: 00\n */
-static inline char* moro8_print_register_word(char* buf, const char* name, moro8_uword value)
+static inline void moro8_print_register_word(const char* name, moro8_uword value, char** buf, size_t* size)
 {
-    buf += sprintf(buf, name);
-    *buf++ = ' ';
-    buf = moro8_print_word(buf, value);
-    *buf++ = '\n';
-    return buf;
+    moro8_print_string(name, buf, size);
+    moro8_print_char(' ', buf, size);
+    moro8_print_word(value, buf, size);
+    moro8_print_char('\n', buf, size);
 }
 
 /** Print REG: LL HH\n */
-static inline char* moro8_print_register_dword(char* buf, const char* name, moro8_udword value)
+static inline void moro8_print_register_dword(const char* name, moro8_udword value, char** buf, size_t* size)
 {
-    buf += sprintf(buf, name);
-    *buf++ = ' ';
-    buf = moro8_print_dword(buf, value);
-    *buf++ = '\n';
-    return buf;
+
+    moro8_print_string(name, buf, size);
+    moro8_print_char(' ', buf, size);
+    moro8_print_dword(value, buf, size);
+    moro8_print_char('\n', buf, size);
 }
 
 /** Print the whole memory as 0000: 00 00 00 00 ... 00 00 00 00 */
-static inline char* moro8_print_memory(char* buf, const moro8_vm* vm)
+static inline void moro8_print_memory(const moro8_vm* vm, char** buf, size_t* size)
 {
+    if (!vm->memory)
+    {
+        return;
+    }
+
     moro8_udword address = 0;
     for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE - 0x10; i += 0x10)
     {
         if (i > 0)
         {
-            *buf++ = '\n';
+            moro8_print_char('\n', buf, size);
         }
 
-        buf = moro8_print_word(buf, (moro8_uword)MORO8_HIGH(i));
-        buf = moro8_print_word(buf, (moro8_uword)MORO8_LOW(i));
-        *buf++ = ':';
-        *buf++ = ' ';
+        moro8_print_word((moro8_uword)MORO8_HIGH(i), buf, size);
+        moro8_print_word((moro8_uword)MORO8_LOW(i), buf, size);
+        moro8_print_char(':', buf, size);
+        moro8_print_char(' ', buf, size);
 
         for (moro8_uword j = 0; j <= 0xF; ++j)
         {
             if (j > 0)
             {
-                *buf++ = ' ';
+                moro8_print_char(' ', buf, size);
                 if ((j % 4) == 0)
                 {
-                    *buf++ = ' ';
+                    moro8_print_char(' ', buf, size);
                 }
             }
-            buf = moro8_print_word(buf, MORO8_GET_MEM(address++));
+            moro8_print_word(MORO8_GET_MEM(address++), buf, size);
         }
     }
-
-    return buf;
 }
 
-char* moro8_print(const moro8_vm* vm)
+size_t moro8_print(const struct moro8_vm* vm, char* buf, size_t size)
 {
-    char* buf = (char*)malloc(MORO8_PRINT_BUFFER_SIZE + 1);
-    if (!buf)
-    {
-        return NULL;
-    }
+    char** buf_ptr = &buf;
+    size_t* size_ptr = &size;
+    moro8_print_register_dword("PC:", vm->registers.pc, buf_ptr, size_ptr);
+    moro8_print_register_word("AC:", vm->registers.ac, buf_ptr, size_ptr);
+    moro8_print_register_word("X: ", vm->registers.x, buf_ptr, size_ptr);
+    moro8_print_register_word("Y: ", vm->registers.y, buf_ptr, size_ptr);
+    moro8_print_register_word("SP:", vm->registers.sp, buf_ptr, size_ptr);
+    moro8_print_register_word("N: ", vm->registers.sr.n, buf_ptr, size_ptr);
+    moro8_print_register_word("V: ", vm->registers.sr.v, buf_ptr, size_ptr);
+    moro8_print_register_word("Z: ", vm->registers.sr.z, buf_ptr, size_ptr);
+    moro8_print_register_word("C: ", vm->registers.sr.c, buf_ptr, size_ptr);
+    moro8_print_char('\n', buf_ptr, size_ptr);
+    moro8_print_memory(vm, buf_ptr, size_ptr);
+    moro8_print_char('\0', buf_ptr, size_ptr);
 
-    char* ptr = buf;
-    ptr = moro8_print_register_dword(ptr, "PC:", vm->registers.pc);
-    ptr = moro8_print_register_word(ptr, "AC:", vm->registers.ac);
-    ptr = moro8_print_register_word(ptr, "X: ", vm->registers.x);
-    ptr = moro8_print_register_word(ptr, "Y: ", vm->registers.y);
-    ptr = moro8_print_register_word(ptr, "SP:", vm->registers.sp);
-    ptr = moro8_print_register_word(ptr, "N: ", vm->registers.sr.n);
-    ptr = moro8_print_register_word(ptr, "V: ", vm->registers.sr.v);
-    ptr = moro8_print_register_word(ptr, "Z: ", vm->registers.sr.z);
-    ptr = moro8_print_register_word(ptr, "C: ", vm->registers.sr.c);
-    *ptr++ = '\n';
-    ptr = moro8_print_memory(ptr, vm);
-    ptr[0] = '\0';
-
-    return buf;
+    return MORO8_PRINT_BUFFER_SIZE - 1;
 }
 
 /** Parse a 0-9A-F character */
@@ -845,7 +899,9 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
     size_t line = 1;
     size_t col = 1;
     size_t value_index = 0;
+    moro8_udword base_address = 0;
     moro8_udword address = 0;
+    moro8_udword value = 0;
 
     for (size_t i = 0; i < size;)
     {
@@ -899,10 +955,9 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
                 if (buf[j] == ':')
                 {
                     // End of label
-                    if (j == 4 && moro8_parse_address(buf, &address))
+                    if (j == 4 && moro8_parse_address(buf, &base_address))
                     {
-                        // Found an address
-                        // TODO value_buffer = &vm->state.memory[address];
+                        value_buffer = NULL;
                     }
                     else if (buf[0] == 'P' && buf[1] == 'C')
                     {
@@ -981,7 +1036,19 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
                 return NULL;
             }
 
-            value_buffer[value_index / 2] += moro8_parse_hex(c) << (((value_index + 1) % 2) * 4);
+            value = moro8_parse_hex(c) << (((value_index + 1) % 2) * 4);
+
+            if (value_buffer)
+            {
+                // Storing in register
+                value_buffer[(moro8_udword)value_index / 2] += value;
+            }
+            else if (vm->memory)
+            {
+                // Storing in memory
+                address = (moro8_udword)(base_address + value_index / 2);
+                vm->memory->set(vm->memory, address, vm->memory->get(vm->memory, address) + value);
+            }
 
             ++value_index;
             ++buf;
@@ -1001,21 +1068,41 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
 
 #endif /* !MORO8_WITH_PARSER */
 
-#if MORO8_WITH_HOOKS
+#if MORO8_WITH_HANDLERS
 
-moro8_hook moro8_get_hook(moro8_vm* vm, moro8_uword op)
+moro8_handler moro8_get_handler(moro8_vm* vm, moro8_uword op)
 {
-    return vm->hooks[op];
+    return vm->handlers[op];
 }
 
-void moro8_set_hook(moro8_vm* vm, moro8_uword op, moro8_hook hook)
+void moro8_set_handler(moro8_vm* vm, moro8_uword op, moro8_handler handler)
 {
-    vm->hooks[op] = hook;
+    vm->handlers[op] = handler;
 }
 
 #endif
 
 #if !MORO8_MINIMALIST
+
+moro8_uword moro8_get_memory_word(struct moro8_vm* vm, moro8_udword address)
+{
+    return vm->memory->get(vm->memory, address);
+}
+
+void moro8_set_memory_word(struct moro8_vm* vm, moro8_udword address, moro8_uword value)
+{
+    vm->memory->set(vm->memory, address, value);
+}
+
+moro8_udword moro8_get_memory_dword(struct moro8_vm* vm, moro8_udword address)
+{
+    return MORO8_MEMORY_DWORD(address);
+}
+
+void moro8_set_memory_dword(struct moro8_vm* vm, moro8_udword address, moro8_udword value)
+{
+    MORO8_MEMORY_SET_DWORD(address, value);
+}
 
 void moro8_copy(moro8_vm* snapshot, const moro8_vm* vm)
 {
