@@ -1,6 +1,8 @@
 # moro8
 
 [![CI](https://github.com/Nauja/moro8/actions/workflows/CI.yml/badge.svg)](https://github.com/Nauja/moro8/actions/workflows/CI.yml)
+[![CI Docs](https://github.com/Nauja/moro8/actions/workflows/CI_docs.yml/badge.svg)](https://github.com/Nauja/moro8/actions/workflows/CI_docs.yml)
+[![Documentation Status](https://readthedocs.org/projects/moro8/badge/?version=latest)](https://moro8.readthedocs.io/en/latest/?badge=latest)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/Nauja/moro8/master/LICENSE)
 
 moro8 is a 8-bit fantasy CPU written in ANSI C with extensibility and portability in mind.
