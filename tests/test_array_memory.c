@@ -23,10 +23,10 @@ static void test_bus(void** state) {
     moro8_array_memory memory;
     moro8_array_memory_init(&memory);
 
-    memory.bus.set((moro8_bus*)&memory, 0xFF, 0);
-    assert_int_equal(memory.bus.get((moro8_bus*)&memory, 0xFF), 0);
-    memory.bus.set((moro8_bus*)&memory, 0xFF, 0xFF);
-    assert_int_equal(memory.bus.get((moro8_bus*)&memory, 0xFF), 0xFF);
+    memory.bus.set_word((moro8_bus*)&memory, 0xFF, 0);
+    assert_int_equal(memory.bus.get_word((moro8_bus*)&memory, 0xFF), 0);
+    memory.bus.set_word((moro8_bus*)&memory, 0xFF, 0xFF);
+    assert_int_equal(memory.bus.get_word((moro8_bus*)&memory, 0xFF), 0xFF);
 }
 
 int main(void) {
