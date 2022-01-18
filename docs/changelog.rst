@@ -7,7 +7,7 @@ Changelog
 
 .. module:: moro8
 
-v0.1.0 (May 17, 2019)
+v0.1.0 (Jan 18, 2022)
 ---------------------
 
   * Stable API
