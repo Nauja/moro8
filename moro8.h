@@ -706,7 +706,9 @@ MORO8_PUBLIC(void) moro8_set_memory_bus(struct moro8_vm* vm, struct moro8_bus* b
 MORO8_PUBLIC(struct moro8_bus*) moro8_get_memory_bus(struct moro8_vm* vm);
 
 /**
- * Loads a program to memory.
+ * Loads a program into the ROM section of memory.
+ *
+ * This also sets the program counter to the first address of loaded program.
  * @param vm vm instance
  * @param prog program address
  * @param size program length

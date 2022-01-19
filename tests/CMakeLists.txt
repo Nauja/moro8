@@ -49,14 +49,13 @@ ExternalProject_Add(libfs
         -DLIBFS_UNIT_TESTING=Off
         -DLIBFS_DOXYGEN=Off
 )
-ExternalProject_Get_Property(libfs source_dir binary_dir)
 
 add_library(libfs_vendor STATIC SHARED IMPORTED)
 
 if(MSVC)
-  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/Release/libfs.lib")
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/${CMAKE_CFG_INTDIR}/libfs.lib")
 else()
-  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/lib/libfs.a")
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/libfs.a")
 endif()
 
 add_dependencies(libfs_vendor libfs)
