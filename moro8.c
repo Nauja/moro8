@@ -929,18 +929,23 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
 #define MORO8_SUBSTATE_MEMORY 2
 
     _moro8_reset(vm);
+    // When reading status register
     moro8_uword sr = 0;
     moro8_uword sr_flag = 0;
+    // Pointer to the moro8_uword we are reading
     moro8_uword* value_buffer = NULL;
-    int state = MORO8_STATE_IDLE;
-    int substate = MORO8_SUBSTATE_REGISTER;
-    char c = 0;
-    size_t line = 1;
-    size_t col = 1;
-    size_t value_index = 0;
+    // Used when reading memory values
     moro8_udword base_address = 0;
     moro8_udword address = 0;
     moro8_udword value = 0;
+    size_t value_index = 0;
+    // State and substate
+    int state = MORO8_STATE_IDLE;
+    int substate = MORO8_SUBSTATE_REGISTER;
+    // Current character
+    char c = 0;
+    size_t line = 1;
+    size_t col = 1;
 
     for (size_t i = 0; i < size;)
     {
