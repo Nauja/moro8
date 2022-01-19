@@ -6,6 +6,8 @@ extern "C"
 {
 #endif
 
+#include <stddef.h>
+
 /** Major version of moro8. */
 #define MORO8_VERSION_MAJOR 0
 /** Minor version of moro8. */
@@ -40,6 +42,7 @@ extern "C"
 
 /* Define to 1 if you build with Doxygen. */
 #ifndef MORO8_DOXYGEN
+/* #undef MORO8_DOXYGEN */
 #endif
 
 #ifndef MORO8_MALLOC

@@ -106,12 +106,12 @@ if (MORO8_UNIT_TESTING)
         message("Skip unit testing because MORO8_STATIC option is off")
 
     else()
-        include(AddCMockaTest) 
+        include(AddCMockaTest)
         add_subdirectory(tests)
 
     endif(NOT MORO8_STATIC)
 endif (MORO8_UNIT_TESTING)
 
 if (MORO8_DOXYGEN)
-    add_subdirectory ("docs")
+    add_subdirectory (docs)
 endif (MORO8_DOXYGEN)

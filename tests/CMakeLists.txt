@@ -30,10 +30,36 @@ endif()
 
 add_dependencies(cmocka_vendor cmocka)
 
+message("CMOCKA_BINARY_DIR=${CMOCKA_BINARY_DIR}")
+message("CMOCKA_LIBRARY=${CMOCKA_LIBRARY}")
+
 # libfs
 set(LIBFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vendor/libfs")
 set(LIBFS_INCLUDE_DIR "${LIBFS_SOURCE_DIR}")
 set(LIBFS_BINARY_DIR "${LIBFS_SOURCE_DIR}/build")
+
+ExternalProject_Add(libfs
+  PREFIX libfs
+  SOURCE_DIR ${LIBFS_SOURCE_DIR}
+  BINARY_DIR ${LIBFS_BINARY_DIR}
+  INSTALL_COMMAND ""
+  CMAKE_ARGS
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DLIBFS_STATIC=On
+        -DLIBFS_UNIT_TESTING=Off
+        -DLIBFS_DOXYGEN=Off
+)
+ExternalProject_Get_Property(libfs source_dir binary_dir)
+
+add_library(libfs_vendor STATIC SHARED IMPORTED)
+
+if(MSVC)
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/src/Release/libfs-static.lib")
+else()
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/src/liblibfs-static.a")
+endif()
+
+add_dependencies(libfs_vendor libfs)
 
 # moro8 tests
 set(_TESTS
@@ -42,31 +68,27 @@ set(_TESTS
     test_opcodes
 )
 
-message("cmocka_BINARY_DIR=${cmocka_BINARY_DIR}")
-message("CMOCKA_STATIC_LIBRARY=${CMOCKA_STATIC_LIBRARY}")
-
 include_directories(${CMOCKA_INCLUDE_DIR}
+                    ${LIBFS_INCLUDE_DIR}
                     ${CMAKE_SOURCE_DIR}
-                    ${CMAKE_CURRENT_SOURCE_DIR}
-                    ${LIBFS_INCLUDE_DIR})
+                    ${CMAKE_CURRENT_SOURCE_DIR})
                     
 foreach(_TEST ${_TESTS})
     add_cmocka_test(moro8-${_TEST}
-                    SOURCES ${LIBFS_INCLUDE_DIR}/fs.c ${CMAKE_CURRENT_SOURCE_DIR}/${_TEST}.c
+                    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${_TEST}.c
                     COMPILE_OPTIONS ${DEFAULT_C_COMPILE_FLAGS}
-                    LINK_LIBRARIES ${CMOCKA_LIBRARY} ${MORO8_STATIC_LIB}
+                    LINK_LIBRARIES ${CMOCKA_LIBRARY} ${LIBFS_LIBRARY} ${MORO8_STATIC_LIB}
     )
     
     target_include_directories(moro8-${_TEST}
         PRIVATE 
             ${CMAKE_BINARY_DIR}
-            ${cmocka_BINARY_DIR}
-            ${LIBFS_INCLUDE_DIR})
+            ${CMOCKA_BINARY_DIR}
+            ${LIBFS_BINARY_DIR})
 
-    # Required for static linking CMocka
-    if (WIN32)
-    target_compile_options(moro8-${_TEST} PRIVATE "/MD$<$<CONFIG:Release>:>" "/MDd$<$<CONFIG:Debug>:>")
-    endif()
+    # Link libfs
+    add_dependencies(moro8-${_TEST} libfs)
+
 endforeach()
 
 # Copy test files
