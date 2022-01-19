@@ -154,9 +154,26 @@ moro8_vm* moro8_create()
     return vm;
 }
 
+static void _moro8_reset(moro8_vm* vm)
+{
+    // Reset registers to 0
+    memset(&vm->registers, 0, sizeof(moro8_registers));
+
+    // Reset stack pointer to 0xFF
+    vm->registers.sp = MORO8_STACK_SIZE - 1;
+
+    // Also reset memory to 0
+    if (vm->memory)
+    {
+        vm->memory->reset(vm->memory);
+    }
+}
+
 void moro8_init(moro8_vm* vm)
 {
     memset(vm, 0, sizeof(moro8_vm));
+
+    _moro8_reset(vm);
 }
 
 void moro8_delete(moro8_vm* vm)
@@ -171,21 +188,6 @@ const void* moro8_as_buffer(const moro8_vm* vm, size_t* size)
 
 void moro8_from_buffer(moro8_vm* vm, const void* buf, size_t size)
 {
-}
-
-static void _moro8_reset(moro8_vm* vm)
-{
-    // Reset registers to 0
-    memset(&vm->registers, 0, sizeof(moro8_registers));
-
-    // Reset stack pointer to 0xFF
-    vm->registers.sp = MORO8_STACK_SIZE - 1;
-
-    // Also reset memory to 0
-    if (vm->memory)
-    {
-        vm->memory->reset(vm->memory);
-    }
 }
 
 void moro8_load(moro8_vm* vm, const moro8_uword* prog, moro8_udword size)
@@ -1096,7 +1098,14 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
             if (value_buffer)
             {
                 // Storing in register
-                value_buffer[(moro8_udword)value_index / 2] += value;
+                if (value_index % 2 == 0)
+                {
+                    value_buffer[(moro8_udword)value_index / 2] = value;
+                }
+                else
+                {
+                    value_buffer[(moro8_udword)value_index / 2] += value;
+                }
 
                 if (substate == MORO8_SUBSTATE_SR)
                 {
