@@ -54,9 +54,9 @@ ExternalProject_Get_Property(libfs source_dir binary_dir)
 add_library(libfs_vendor STATIC SHARED IMPORTED)
 
 if(MSVC)
-  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/src/Release/libfs-static.lib")
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/Release/libfs.lib")
 else()
-  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/src/liblibfs-static.a")
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/lib/libfs.a")
 endif()
 
 add_dependencies(libfs_vendor libfs)

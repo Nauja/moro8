@@ -185,8 +185,14 @@ static void _moro8_reset(moro8_vm* vm)
 
 void moro8_load(moro8_vm* vm, const moro8_uword* prog, moro8_udword size)
 {
+    // Reset registers and memory
     _moro8_reset(vm);
+
+    // Load program to ROM
     moro8_set_memory(vm, prog, MORO8_ROM_OFFSET, size);
+
+    // Set program counter to ROM
+    vm->registers.pc = MORO8_ROM_OFFSET;
 }
 
 void moro8_resume(moro8_vm* vm)
@@ -635,7 +641,6 @@ size_t moro8_step(moro8_vm* vm)
 
 void moro8_run(moro8_vm* vm)
 {
-    vm->registers.pc = MORO8_ROM_OFFSET;
     moro8_resume(vm);
 }
 
