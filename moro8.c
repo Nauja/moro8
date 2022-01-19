@@ -61,7 +61,7 @@ void moro8_init_hooks(struct moro8_hooks* hooks)
 #define MORO8_AC vm->registers.ac
 #define MORO8_X vm->registers.x
 #define MORO8_Y vm->registers.y
-#define MORO8_SR vm->registers.sr
+#define MORO8_SR (*(moro8_uword*)&vm->registers.sr)
 #define MORO8_SP vm->registers.sp
 #define MORO8_C vm->registers.sr.c
 #define MORO8_Z vm->registers.sr.z
@@ -265,6 +265,7 @@ size_t moro8_step(moro8_vm* vm)
     MORO8_AC = value; \
     MORO8_N = MORO8_IS_NEGATIVE(MORO8_AC); \
     MORO8_Z = MORO8_AC == 0
+#define MORO8_SET_SR(value) *((moro8_uword*)&vm->registers.sr) = value
 #define MORO8_SET_SP(value) MORO8_SP = value
 #define MORO8_ADC(operand) \
 { \
@@ -566,9 +567,17 @@ size_t moro8_step(moro8_vm* vm)
         MORO8_SET_MEM(vm->registers.sp, MORO8_AC);
         vm->registers.sp++;
         break;
+    case MORO8_OP_PHP:
+        MORO8_SET_MEM(vm->registers.sp, MORO8_SR);
+        vm->registers.sp++;
+        break;
     case MORO8_OP_PLA:
         vm->registers.sp--;
         MORO8_SET_AC(MORO8_GET_MEM(vm->registers.sp));
+        break;
+    case MORO8_OP_PLP:
+        vm->registers.sp--;
+        MORO8_SET_SR(MORO8_GET_MEM(vm->registers.sp));
         break;
     case MORO8_OP_STA_ZP:
         MORO8_SET_MEM_ZP(MORO8_AC);
@@ -665,12 +674,7 @@ moro8_uword moro8_get_register(const moro8_vm* vm, moro8_register reg)
     case MORO8_REGISTER_Y:
         return MORO8_Y;
     case MORO8_REGISTER_SR:
-        return (
-            ((MORO8_N & 0x1) << 7) +
-            ((MORO8_V & 0x1) << 6) +
-            ((MORO8_Z & 0x1) << 1) +
-            (MORO8_C & 0x1)
-        );
+        return MORO8_SR;
     case MORO8_REGISTER_N:
         return MORO8_N;
     case MORO8_REGISTER_V:
@@ -700,10 +704,7 @@ void moro8_set_register(moro8_vm* vm, enum moro8_register reg, moro8_uword value
         MORO8_Y = value;
         break;
     case MORO8_REGISTER_SR:
-        MORO8_N = (value & 0x80) != 0;
-        MORO8_V = (value & 0x40) != 0;
-        MORO8_Z = (value & 0x2) != 0;
-        MORO8_C = (value & 0x1);
+        MORO8_SET_SR(value);
         break;
     case MORO8_REGISTER_N:
         MORO8_N = value;
@@ -911,10 +912,16 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
 #define MORO8_STATE_IDLE 0
 #define MORO8_STATE_VALUE 1
 #define MORO8_STATE_COMMENT 2
+#define MORO8_SUBSTATE_REGISTER 0
+#define MORO8_SUBSTATE_SR 1
+#define MORO8_SUBSTATE_MEMORY 2
 
     _moro8_reset(vm);
+    moro8_uword sr = 0;
+    moro8_uword sr_flag = 0;
     moro8_uword* value_buffer = NULL;
     int state = MORO8_STATE_IDLE;
+    int substate = MORO8_SUBSTATE_REGISTER;
     char c = 0;
     size_t line = 1;
     size_t col = 1;
@@ -977,44 +984,62 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
                     // End of label
                     if (j == 4 && moro8_parse_address(buf, &base_address))
                     {
+                        substate = MORO8_SUBSTATE_MEMORY;
                         value_buffer = NULL;
                     }
                     else if (buf[0] == 'P' && buf[1] == 'C')
                     {
+                        substate = MORO8_SUBSTATE_REGISTER;
                         vm->registers.pc = 0;
                         value_buffer = (moro8_uword*)&vm->registers.pc;
                     }
                     else if (buf[0] == 'A' && buf[1] == 'C')
                     {
+                        substate = MORO8_SUBSTATE_REGISTER;
                         value_buffer = &vm->registers.ac;
                     }
                     else if (buf[0] == 'X')
                     {
+                        substate = MORO8_SUBSTATE_REGISTER;
                         value_buffer = &vm->registers.x;
                     }
                     else if (buf[0] == 'Y')
                     {
+                        substate = MORO8_SUBSTATE_REGISTER;
                         value_buffer = &vm->registers.y;
                     }
                     else if (buf[0] == 'S' && buf[1] == 'P')
                     {
+                        substate = MORO8_SUBSTATE_REGISTER;
                         value_buffer = &vm->registers.sp;
                     }
                     else if (buf[0] == 'N')
                     {
-                        value_buffer = &vm->registers.sr.n;
+                        substate = MORO8_SUBSTATE_SR;
+                        value_buffer = &sr;
+                        sr = 0;
+                        sr_flag = 0x80;
                     }
                     else if (buf[0] == 'V')
                     {
-                        value_buffer = &vm->registers.sr.v;
+                        substate = MORO8_SUBSTATE_SR;
+                        value_buffer = &sr;
+                        sr = 0;
+                        sr_flag = 0x40;
                     }
                     else if (buf[0] == 'C')
                     {
-                        value_buffer = &vm->registers.sr.c;
+                        substate = MORO8_SUBSTATE_SR;
+                        value_buffer = &sr;
+                        sr = 0;
+                        sr_flag = 0x1;
                     }
                     else if (buf[0] == 'Z')
                     {
-                        value_buffer = &vm->registers.sr.z;
+                        substate = MORO8_SUBSTATE_SR;
+                        value_buffer = &sr;
+                        sr = 0;
+                        sr_flag = 0x2;
                     }
                     else
                     {
@@ -1062,6 +1087,12 @@ moro8_vm* moro8_parse(moro8_vm* vm, const char* buf, size_t size)
             {
                 // Storing in register
                 value_buffer[(moro8_udword)value_index / 2] += value;
+
+                if (substate == MORO8_SUBSTATE_SR)
+                {
+                    // Toggle corresponding flag in status register
+                    MORO8_SET_SR((MORO8_SR & ~sr_flag) + (sr != 0 ? sr_flag : 0));
+                }
             }
             else if (vm->memory)
             {
@@ -1222,23 +1253,44 @@ int moro8_equal(const moro8_vm* left, const moro8_vm* right)
 
 #ifdef MORO8_DOXYGEN
 
-moro8_uword moro8_get_ac(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_x(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_y(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_sp(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_sr(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_c(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_v(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_n(struct moro8_vm* vm) { return 0; }
-moro8_uword moro8_get_z(struct moro8_vm* vm) { return 0; }
-void moro8_set_ac(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_x(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_y(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_sp(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_sr(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_c(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_v(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_n(struct moro8_vm* vm, moro8_uword value) {}
-void moro8_set_z(struct moro8_vm* vm, moro8_uword value) {}
+/** Get registers values. */
+#define _moro8_get_ac(vm) moro8_get_register(vm, MORO8_REGISTER_AC)
+#define _moro8_get_x(vm) moro8_get_register(vm, MORO8_REGISTER_X)
+#define _moro8_get_y(vm) moro8_get_register(vm, MORO8_REGISTER_Y)
+#define _moro8_get_sp(vm) moro8_get_register(vm, MORO8_REGISTER_SP)
+#define _moro8_get_sr(vm) moro8_get_register(vm, MORO8_REGISTER_SR)
+#define _moro8_get_c(vm) moro8_get_register(vm, MORO8_REGISTER_C)
+#define _moro8_get_v(vm) moro8_get_register(vm, MORO8_REGISTER_V)
+#define _moro8_get_n(vm) moro8_get_register(vm, MORO8_REGISTER_N)
+#define _moro8_get_z(vm) moro8_get_register(vm, MORO8_REGISTER_Z)
+/** Set registers values. */
+#define _moro8_set_ac(vm, value) moro8_set_register(vm, MORO8_REGISTER_AC, value)
+#define _moro8_set_x(vm, value) moro8_set_register(vm, MORO8_REGISTER_X, value)
+#define _moro8_set_y(vm, value) moro8_set_register(vm, MORO8_REGISTER_Y, value)
+#define _moro8_set_sp(vm, value) moro8_set_register(vm, MORO8_REGISTER_SP, value)
+#define _moro8_set_sr(vm, value) moro8_set_register(vm, MORO8_REGISTER_SR, value)
+#define _moro8_set_c(vm, value) moro8_set_register(vm, MORO8_REGISTER_C, value)
+#define _moro8_set_v(vm, value) moro8_set_register(vm, MORO8_REGISTER_V, value)
+#define _moro8_set_n(vm, value) moro8_set_register(vm, MORO8_REGISTER_N, value)
+#define _moro8_set_z(vm, value) moro8_set_register(vm, MORO8_REGISTER_Z, value)
+
+moro8_uword moro8_get_ac(struct moro8_vm* vm) { return _moro8_get_ac(vm); }
+moro8_uword moro8_get_x(struct moro8_vm* vm) { return _moro8_get_x(vm); }
+moro8_uword moro8_get_y(struct moro8_vm* vm) { return _moro8_get_y(vm); }
+moro8_uword moro8_get_sp(struct moro8_vm* vm) { return _moro8_get_sp(vm); }
+moro8_uword moro8_get_sr(struct moro8_vm* vm) { return _moro8_get_sr(vm); }
+moro8_uword moro8_get_c(struct moro8_vm* vm) { return _moro8_get_c(vm); }
+moro8_uword moro8_get_v(struct moro8_vm* vm) { return _moro8_get_v(vm); }
+moro8_uword moro8_get_n(struct moro8_vm* vm) { return _moro8_get_n(vm); }
+moro8_uword moro8_get_z(struct moro8_vm* vm) { return _moro8_get_z(vm); }
+void moro8_set_ac(struct moro8_vm* vm, moro8_uword value) { _moro8_set_ac(vm, value); }
+void moro8_set_x(struct moro8_vm* vm, moro8_uword value) { _moro8_set_x(vm, value); }
+void moro8_set_y(struct moro8_vm* vm, moro8_uword value) { _moro8_set_y(vm, value); }
+void moro8_set_sp(struct moro8_vm* vm, moro8_uword value) { _moro8_set_sp(vm, value); }
+void moro8_set_sr(struct moro8_vm* vm, moro8_uword value) { _moro8_set_sr(vm, value); }
+void moro8_set_c(struct moro8_vm* vm, moro8_uword value) { _moro8_set_c(vm, value); }
+void moro8_set_v(struct moro8_vm* vm, moro8_uword value) { _moro8_set_v(vm, value); }
+void moro8_set_n(struct moro8_vm* vm, moro8_uword value) { _moro8_set_n(vm, value); }
+void moro8_set_z(struct moro8_vm* vm, moro8_uword value) { _moro8_set_z(vm, value); }
 
 #endif

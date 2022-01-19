@@ -256,14 +256,22 @@ struct moro8_registers {
     /** Status register. */
     struct sr
     {
-        /** Negative. */
-        moro8_uword n;
-        /** Overflow. */
-        moro8_uword v;
-        /** Zero. */
-        moro8_uword z;
         /** Carry. */
-        moro8_uword c;
+        moro8_uword c:1;
+        /** Zero. */
+        moro8_uword z:1;
+        /** Interrupt. */
+        moro8_uword i:1;
+        /** Decimal. */
+        moro8_uword d:1;
+        /** Break. */
+        moro8_uword b:1;
+        /** Ignored. */
+        moro8_uword ignored:1;
+        /** Overflow. */
+        moro8_uword v:1;
+        /** Negative. */
+        moro8_uword n:1;
     } sr;
     /** Stack pointer. */
     moro8_uword sp;
@@ -467,7 +475,9 @@ enum moro8_opcode
 	MORO8_OP_ORA_IND_X = 0x01,
 	MORO8_OP_ORA_IND_Y = 0x11,
 	MORO8_OP_PHA = 0x48,
+	MORO8_OP_PHP = 0x08,
 	MORO8_OP_PLA = 0x68,
+	MORO8_OP_PLP = 0x28,
 	MORO8_OP_STA_ZP = 0x85,
 	MORO8_OP_STA_ZP_X = 0x95,
 	MORO8_OP_STA_ABS = 0x8D,

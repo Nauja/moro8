@@ -164,6 +164,24 @@ static void test_parse(void** state) {
     moro8_delete(vm2);
 }
 
+/** Test the special status register. */
+static void test_sr(void** state) {
+    moro8_vm* vm = *state;
+
+    assert_int_equal(moro8_get_sr(vm), 0);
+
+    assert_int_equal(moro8_get_n(vm), 0);
+    moro8_set_n(vm, 1);
+    assert_int_equal(moro8_get_n(vm), 1);
+    assert_int_equal(moro8_get_sr(vm), 0x80);
+    moro8_set_n(vm, 0xFF);
+    assert_int_equal(moro8_get_n(vm), 1);
+    assert_int_equal(moro8_get_sr(vm), 0x80);
+    moro8_set_n(vm, 0);
+    assert_int_equal(moro8_get_n(vm), 0);
+    assert_int_equal(moro8_get_sr(vm), 0);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_types),
@@ -175,7 +193,8 @@ int main(void) {
         cmocka_unit_test_setup_teardown(test_set_memory_word, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_dword, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_dword_oom, moro8_setup_vm, moro8_delete_vm),
-        cmocka_unit_test_setup_teardown(test_parse, moro8_setup_vm, moro8_delete_vm)
+        cmocka_unit_test_setup_teardown(test_parse, moro8_setup_vm, moro8_delete_vm),
+        cmocka_unit_test_setup_teardown(test_sr, moro8_setup_vm, moro8_delete_vm)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

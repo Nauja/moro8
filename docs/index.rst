@@ -16,6 +16,12 @@ Welcome to moro8's documentation!
 
 .. toctree::
    :maxdepth: 1
+   :caption: CPU Reference:
+
+   cpu/opcodes
+
+.. toctree::
+   :maxdepth: 1
    :caption: API Reference:
 
    api/functions

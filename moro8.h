@@ -42,7 +42,7 @@ extern "C"
 
 /* Define to 1 if you build with Doxygen. */
 #ifndef MORO8_DOXYGEN
-/* #undef MORO8_DOXYGEN */
+#define MORO8_DOXYGEN 1
 #endif
 
 #ifndef MORO8_MALLOC
@@ -256,14 +256,22 @@ struct moro8_registers {
     /** Status register. */
     struct sr
     {
-        /** Negative. */
-        moro8_uword n;
-        /** Overflow. */
-        moro8_uword v;
-        /** Zero. */
-        moro8_uword z;
         /** Carry. */
-        moro8_uword c;
+        moro8_uword c:1;
+        /** Zero. */
+        moro8_uword z:1;
+        /** Interrupt. */
+        moro8_uword i:1;
+        /** Decimal. */
+        moro8_uword d:1;
+        /** Break. */
+        moro8_uword b:1;
+        /** Ignored. */
+        moro8_uword ignored:1;
+        /** Overflow. */
+        moro8_uword v:1;
+        /** Negative. */
+        moro8_uword n:1;
     } sr;
     /** Stack pointer. */
     moro8_uword sp;
@@ -467,7 +475,9 @@ enum moro8_opcode
 	MORO8_OP_ORA_IND_X = 0x01,
 	MORO8_OP_ORA_IND_Y = 0x11,
 	MORO8_OP_PHA = 0x48,
+	MORO8_OP_PHP = 0x08,
 	MORO8_OP_PLA = 0x68,
+	MORO8_OP_PLP = 0x28,
 	MORO8_OP_STA_ZP = 0x85,
 	MORO8_OP_STA_ZP_X = 0x95,
 	MORO8_OP_STA_ABS = 0x8D,
@@ -1018,109 +1028,109 @@ MORO8_PUBLIC(int) moro8_equal(const struct moro8_vm* left, const struct moro8_vm
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_ac(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_ac(struct moro8_vm* vm);
 /**
  * Gets the value in X register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_x(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_x(struct moro8_vm* vm);
 /**
  * Gets the value in Y register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_y(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_y(struct moro8_vm* vm);
 /**
  * Gets the value in stack pointer register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_sp(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_sp(struct moro8_vm* vm);
 /**
  * Gets the value in status register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_sr(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_sr(struct moro8_vm* vm);
 /**
  * Gets the value in C register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_c(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_c(struct moro8_vm* vm);
 /**
  * Gets the value in V register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_v(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_v(struct moro8_vm* vm);
 /**
  * Gets the value in N register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_n(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_n(struct moro8_vm* vm);
 /**
  * Gets the value in Z register.
  * @param[in] vm Some vm
  * @return Value from register.
  */
-MORO8_PUBLIC(moro8_uword) moro8_get_z(struct moro8_vm* vm) { return 0; }
+MORO8_PUBLIC(moro8_uword) moro8_get_z(struct moro8_vm* vm);
 /**
  * Sets the value in accumulator register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_ac(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_ac(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in X register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_x(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_x(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in Y register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_y(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_y(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in stack pointer register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_sp(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_sp(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in status register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_sr(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_sr(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in C register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_c(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_c(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in V register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_v(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_v(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in N register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_n(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_n(struct moro8_vm* vm, moro8_uword value);
 /**
  * Sets the value in Z register.
  * @param[in] vm Some vm
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_set_z(struct moro8_vm* vm, moro8_uword value) {}
+MORO8_PUBLIC(void) moro8_set_z(struct moro8_vm* vm, moro8_uword value);
 #else
 /** Get registers values. */
 #define moro8_get_ac(vm) moro8_get_register(vm, MORO8_REGISTER_AC)
