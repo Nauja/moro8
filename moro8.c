@@ -576,8 +576,7 @@ size_t moro8_step(moro8_vm* vm)
         MORO8_DEC_PC;
         break;
     case MORO8_OP_PHP:
-        // 0x30 = break flag + bit 5 set to 1
-        MORO8_SET_MEM(vm->registers.sp, (MORO8_SR | 0x30));
+        MORO8_SET_MEM(vm->registers.sp, MORO8_SR);
         vm->registers.sp--;
         MORO8_DEC_PC;
         break;

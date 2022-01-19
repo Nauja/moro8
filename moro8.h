@@ -264,9 +264,9 @@ struct moro8_registers {
         moro8_uword i:1;
         /** Decimal. */
         moro8_uword d:1;
-        /** Break. */
+        /** Break (not used). */
         moro8_uword b:1;
-        /** Ignored. */
+        /** Ignored (not used). */
         moro8_uword ignored:1;
         /** Overflow. */
         moro8_uword v:1;
