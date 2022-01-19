@@ -1218,3 +1218,27 @@ int moro8_equal(const moro8_vm* left, const moro8_vm* right)
 }
 
 #endif
+
+
+#ifdef MORO8_DOXYGEN
+
+moro8_uword moro8_get_ac(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_x(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_y(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_sp(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_sr(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_c(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_v(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_n(struct moro8_vm* vm) { return 0; }
+moro8_uword moro8_get_z(struct moro8_vm* vm) { return 0; }
+void moro8_set_ac(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_x(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_y(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_sp(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_sr(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_c(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_v(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_n(struct moro8_vm* vm, moro8_uword value) {}
+void moro8_set_z(struct moro8_vm* vm, moro8_uword value) {}
+
+#endif
