@@ -175,8 +175,13 @@ void moro8_from_buffer(moro8_vm* vm, const void* buf, size_t size)
 
 static void _moro8_reset(moro8_vm* vm)
 {
+    // Reset registers to 0
     memset(&vm->registers, 0, sizeof(moro8_registers));
 
+    // Reset stack pointer to 0xFF
+    vm->registers.sp = MORO8_STACK_SIZE - 1;
+
+    // Also reset memory to 0
     if (vm->memory)
     {
         vm->memory->reset(vm->memory);
@@ -565,19 +570,24 @@ size_t moro8_step(moro8_vm* vm)
         break;
     case MORO8_OP_PHA:
         MORO8_SET_MEM(vm->registers.sp, MORO8_AC);
-        vm->registers.sp++;
+        vm->registers.sp--;
+        MORO8_DEC_PC;
         break;
     case MORO8_OP_PHP:
-        MORO8_SET_MEM(vm->registers.sp, MORO8_SR);
-        vm->registers.sp++;
+        // 0x30 = break flag + bit 5 set to 1
+        MORO8_SET_MEM(vm->registers.sp, (MORO8_SR | 0x30));
+        vm->registers.sp--;
+        MORO8_DEC_PC;
         break;
     case MORO8_OP_PLA:
-        vm->registers.sp--;
+        vm->registers.sp++;
         MORO8_SET_AC(MORO8_GET_MEM(vm->registers.sp));
+        MORO8_DEC_PC;
         break;
     case MORO8_OP_PLP:
-        vm->registers.sp--;
+        vm->registers.sp++;
         MORO8_SET_SR(MORO8_GET_MEM(vm->registers.sp));
+        MORO8_DEC_PC;
         break;
     case MORO8_OP_STA_ZP:
         MORO8_SET_MEM_ZP(MORO8_AC);
