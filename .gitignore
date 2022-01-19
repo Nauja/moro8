@@ -23,11 +23,11 @@ obj/
 *.png
 *.jpg
 *.bat
-*.css
 *.js
 *.wasm
 Dockerfile
 DockerfileGit
+Emulator*
 
 Debug/
 Release/

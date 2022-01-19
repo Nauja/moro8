@@ -1,0 +1,21 @@
+.moro8-opcode 
+{
+    display: flex;
+    flex-direction: column;
+    display: inline-block;
+}
+
+.moro8-opcode .moro8-header
+{
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+}
+
+.moro8-pre
+{
+    white-space: pre;
+    font-family: monospace;
+    display: block;
+    display: inline-block;
+}
