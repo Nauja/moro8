@@ -31,9 +31,9 @@ void test_func(void** initial_state) {
     moro8_step(vm);
 
     // Print output state
-    char output[1093];
-    moro8_print(vm, output, 1093);
-    fs_assert_write_file(state->output, output, 1092);
+    char output[MORO8_PRINT_BUFFER_SIZE];
+    moro8_print(vm, output, MORO8_PRINT_BUFFER_SIZE);
+    fs_assert_write_file(state->output, output, MORO8_PRINT_BUFFER_SIZE - 1);
 
     // Compare expected state
     size_t size = 0;

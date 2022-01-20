@@ -185,11 +185,11 @@ typedef short moro8_dword;
   */
 #define MORO8_STACK_SIZE 0x100
 /**
- * Total size of the ROM section in memory.
+ * Total size of the ROM section in memory: 0x8000.
  *
  * This is an arbitrary value but must be big enough to contain the program.
  */
-#define MORO8_ROM_SIZE 0xFF
+#define MORO8_ROM_SIZE 0x8000
 /**
  * Starting address of the ROM section in memory: MORO8_MEMORY_SIZE - MORO8_ROM_SIZE.
  * 
@@ -503,6 +503,7 @@ enum moro8_opcode
 	MORO8_OP_PHP = 0x08,
 	MORO8_OP_PLA = 0x68,
 	MORO8_OP_PLP = 0x28,
+	MORO8_OP_RTS = 0x60,
 	MORO8_OP_STA_ZP = 0x85,
 	MORO8_OP_STA_ZP_X = 0x95,
 	MORO8_OP_STA_ABS = 0x8D,

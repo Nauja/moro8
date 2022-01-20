@@ -1,0 +1,26 @@
+BRK
+break / interrupt
+CLD
+clear decimal
+CLI
+clear interrupt disable
+CMP
+compare (with accumulator)
+CPX
+compare with X
+CPY
+compare with Y
+ROL
+rotate left
+ROR
+rotate right
+RTI
+return from interrupt
+SBC
+subtract with carry
+SEC
+set carry
+SED
+set decimal
+SEI
+set interrupt disable

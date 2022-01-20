@@ -70,6 +70,8 @@ void moro8_init_hooks(struct moro8_hooks* hooks)
 /** Easier access to memory. */
 #define MORO8_GET_MEM(addr) vm->memory->get_word(vm->memory, addr)
 #define MORO8_SET_MEM(addr, value) vm->memory->set_word(vm->memory, addr, value)
+#define MORO8_GET_STACK() MORO8_GET_MEM(MORO8_STACK_OFFSET + vm->registers.sp)
+#define MORO8_SET_STACK(value) MORO8_SET_MEM(MORO8_STACK_OFFSET + vm->registers.sp, value)
 
 moro8_array_memory* moro8_array_memory_create()
 {
@@ -257,6 +259,17 @@ size_t moro8_step(moro8_vm* vm)
 #define MORO8_SET_MEM_ABS_Y(value) MORO8_SET_MEM(MORO8_ADDR_ABS_Y, value)
 #define MORO8_SET_MEM_IND_X(value) MORO8_SET_MEM(MORO8_ADDR_IND_X, value)
 #define MORO8_SET_MEM_IND_Y(value) MORO8_SET_MEM(MORO8_ADDR_IND_Y, value)
+    /** Stack. */
+#define MORO8_PUSH_STACK(value) \
+{ \
+    MORO8_SET_MEM(MORO8_STACK_OFFSET + vm->registers.sp, value); \
+    vm->registers.sp--; \
+}
+#define MORO8_POP_STACK() \
+{ \
+    vm->registers.sp++; \
+    MORO8_GET_MEM(MORO8_STACK_OFFSET + vm->registers.sp); \
+}
     /** */
 #define MORO8_SIGN(value) (value & 0x80)
 #define MORO8_IS_NEGATIVE(value) ((value & 0x80) != 0)
@@ -366,7 +379,7 @@ size_t moro8_step(moro8_vm* vm)
     MORO8_Z = (MORO8_AC & value) == 0; \
 }
 
-    if (instruction == 0 || instruction == 0x60)
+    if (instruction == 0)
     {
         return MORO8_FALSE;
     }
@@ -571,10 +584,9 @@ size_t moro8_step(moro8_vm* vm)
     case MORO8_OP_JSR_ABS:
     {
         moro8_udword addr = MORO8_DWORD_OPERAND;
-        vm->registers.pc++;
-        MORO8_SET_MEM(vm->registers.sp, MORO8_HIGH(MORO8_PC));
+        MORO8_SET_STACK(MORO8_HIGH(MORO8_PC));
         vm->registers.sp--;
-        MORO8_SET_MEM(vm->registers.sp, MORO8_LOW(MORO8_PC));
+        MORO8_SET_STACK(MORO8_LOW(MORO8_PC));
         vm->registers.sp--;
         vm->registers.pc = addr - 1;
         break;
@@ -677,24 +689,30 @@ size_t moro8_step(moro8_vm* vm)
         MORO8_OR(MORO8_GET_MEM_IND_Y());
         break;
     case MORO8_OP_PHA:
-        MORO8_SET_MEM(vm->registers.sp, MORO8_AC);
+        MORO8_SET_STACK(MORO8_AC);
         vm->registers.sp--;
         MORO8_DEC_PC;
         break;
     case MORO8_OP_PHP:
-        MORO8_SET_MEM(vm->registers.sp, MORO8_SR);
+        MORO8_SET_STACK(MORO8_SR);
         vm->registers.sp--;
         MORO8_DEC_PC;
         break;
     case MORO8_OP_PLA:
         vm->registers.sp++;
-        MORO8_SET_AC(MORO8_GET_MEM(vm->registers.sp));
+        MORO8_SET_AC(MORO8_GET_STACK());
         MORO8_DEC_PC;
         break;
     case MORO8_OP_PLP:
         vm->registers.sp++;
-        MORO8_SET_SR(MORO8_GET_MEM(vm->registers.sp));
+        MORO8_SET_SR(MORO8_GET_STACK());
         MORO8_DEC_PC;
+        break;
+    case MORO8_OP_RTS:
+        vm->registers.sp++;
+        vm->registers.pc = MORO8_GET_STACK();
+        vm->registers.sp++;
+        vm->registers.pc += MORO8_GET_STACK() << 8;
         break;
     case MORO8_OP_STA_ZP:
         MORO8_SET_MEM_ZP(MORO8_AC);
