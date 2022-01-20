@@ -312,13 +312,21 @@ size_t moro8_step(moro8_vm* vm)
     MORO8_SET_AC((moro8_uword)(result & 0xFF)); \
     MORO8_V = sign_bit && (MORO8_SIGN(MORO8_AC) != MORO8_SIGN(value)); \
 }
-#define MORO8_INC(operand) \
+#define MORO8_INC(operand, op) \
 { \
     moro8_udword address = operand; \
-    moro8_uword value = MORO8_GET_MEM(address) + 1; \
+    moro8_uword value = MORO8_GET_MEM(address); \
+    value op; \
     MORO8_N = MORO8_IS_NEGATIVE(value); \
     MORO8_Z = value == 0; \
     MORO8_SET_MEM(address, value); \
+}
+#define MORO8_INC_REG(reg, op) \
+{ \
+    reg op; \
+    MORO8_N = MORO8_IS_NEGATIVE(reg); \
+    MORO8_Z = reg == 0; \
+    MORO8_DEC_PC; \
 }
 #define MORO8_LSR_AC() \
 { \
@@ -491,6 +499,24 @@ size_t moro8_step(moro8_vm* vm)
     case MORO8_OP_CMP_IND_Y:
         MORO8_CMP(MORO8_GET_MEM_IND_Y());
         break;
+    case MORO8_OP_DEC_ZP:
+        MORO8_INC(MORO8_ADDR_ZP, --);
+        break;
+    case MORO8_OP_DEC_ZP_X:
+        MORO8_INC(MORO8_ADDR_ZP_X, --);
+        break;
+    case MORO8_OP_DEC_ABS:
+        MORO8_INC(MORO8_ADDR_ABS, --);
+        break;
+    case MORO8_OP_DEC_ABS_X:
+        MORO8_INC(MORO8_ADDR_ABS_X, --);
+        break;
+    case MORO8_OP_DEX:
+        MORO8_INC_REG(MORO8_X, --);
+        break;
+    case MORO8_OP_DEY:
+        MORO8_INC_REG(MORO8_Y, --);
+        break;
     case MORO8_OP_EOR_IMM:
         MORO8_XOR(operand);
         break;
@@ -516,28 +542,22 @@ size_t moro8_step(moro8_vm* vm)
         MORO8_XOR(MORO8_GET_MEM_IND_Y());
         break;
     case MORO8_OP_INC_ZP:
-        MORO8_INC(MORO8_ADDR_ZP);
+        MORO8_INC(MORO8_ADDR_ZP, ++);
         break;
     case MORO8_OP_INC_ZP_X:
-        MORO8_INC(MORO8_ADDR_ZP_X);
+        MORO8_INC(MORO8_ADDR_ZP_X, ++);
         break;
     case MORO8_OP_INC_ABS:
-        MORO8_INC(MORO8_ADDR_ABS);
+        MORO8_INC(MORO8_ADDR_ABS, ++);
         break;
     case MORO8_OP_INC_ABS_X:
-        MORO8_INC(MORO8_ADDR_ABS_X);
+        MORO8_INC(MORO8_ADDR_ABS_X, ++);
         break;
     case MORO8_OP_INX:
-        MORO8_X++;
-        MORO8_N = MORO8_IS_NEGATIVE(MORO8_X);
-        MORO8_Z = MORO8_X == 0;
-        MORO8_DEC_PC;
+        MORO8_INC_REG(MORO8_X, ++);
         break;
     case MORO8_OP_INY:
-        MORO8_Y++;
-        MORO8_N = MORO8_IS_NEGATIVE(MORO8_Y);
-        MORO8_Z = MORO8_Y == 0;
-        MORO8_DEC_PC;
+        MORO8_INC_REG(MORO8_Y, ++);
         break;
     case MORO8_OP_JMP_ABS:
         vm->registers.pc = MORO8_DWORD_OPERAND - 1;
