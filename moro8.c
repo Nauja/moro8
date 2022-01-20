@@ -549,8 +549,16 @@ size_t moro8_step(moro8_vm* vm)
         break;
     }
     case MORO8_OP_JSR_ABS:
-        // @todo
+    {
+        moro8_udword addr = MORO8_DWORD_OPERAND;
+        vm->registers.pc++;
+        MORO8_SET_MEM(vm->registers.sp, MORO8_HIGH(MORO8_PC));
+        vm->registers.sp--;
+        MORO8_SET_MEM(vm->registers.sp, MORO8_LOW(MORO8_PC));
+        vm->registers.sp--;
+        vm->registers.pc = addr - 1;
         break;
+    }
     case MORO8_OP_LDA_IMM:
         MORO8_SET_AC(operand);
         break;
