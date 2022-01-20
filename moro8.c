@@ -457,6 +457,16 @@ static inline moro8_uword _moro8_pop_stack(moro8_vm* vm)
     return MORO8_GET_MEM(MORO8_STACK_OFFSET + vm->registers.sp);
 }
 
+/**
+ * Performs SBC opcode.
+ * @param[in] vm Some vm
+ * @param[in] operand Instruction operand
+ */
+static inline void _moro8_sbc(moro8_vm* vm, moro8_uword operand)
+{
+    _moro8_adc(vm, -(operand + ~MORO8_C));
+}
+
 size_t moro8_step(moro8_vm* vm)
 {
     moro8_uword instruction = MORO8_GET_MEM(vm->registers.pc);
@@ -848,6 +858,30 @@ size_t moro8_step(moro8_vm* vm)
     case MORO8_OP_RTS:
         vm->registers.pc = _moro8_pop_stack(vm);
         vm->registers.pc += _moro8_pop_stack(vm) << 8;
+        break;
+    case MORO8_OP_SBC_IMM:
+        _moro8_sbc(vm, operand);
+        break;
+    case MORO8_OP_SBC_ZP:
+        _moro8_sbc(vm, MORO8_GET_MEM_ZP());
+        break;
+    case MORO8_OP_SBC_ZP_X:
+        _moro8_sbc(vm, MORO8_GET_MEM_ZP_X());
+        break;
+    case MORO8_OP_SBC_ABS:
+        _moro8_sbc(vm, MORO8_GET_MEM_ABS());
+        break;
+    case MORO8_OP_SBC_ABS_X:
+        _moro8_sbc(vm, MORO8_GET_MEM_ABS_X());
+        break;
+    case MORO8_OP_SBC_ABS_Y:
+        _moro8_sbc(vm, MORO8_GET_MEM_ABS_Y());
+        break;
+    case MORO8_OP_SBC_IND_X:
+        _moro8_sbc(vm, MORO8_GET_MEM_IND_X());
+        break;
+    case MORO8_OP_SBC_IND_Y:
+        _moro8_sbc(vm, MORO8_GET_MEM_IND_Y());
         break;
     case MORO8_OP_SEC:
         MORO8_C = 1;
