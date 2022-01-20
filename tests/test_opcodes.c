@@ -6,7 +6,7 @@
 #define MORO8_TEST_OPCODES_INPUT_DIR "test_opcodes"
 #define MORO8_TEST_OPCODES_EXPECTED_DIR "test_opcodes/expected"
 #define MORO8_TEST_OPCODES_OUTPUT_DIR "test_opcodes/output"
-#define MORO8_NUM_TESTS 100
+#define MORO8_NUM_TESTS 150
 
 typedef struct fs_directory_iterator fs_directory_iterator;
 typedef struct CMUnitTest CMUnitTest;

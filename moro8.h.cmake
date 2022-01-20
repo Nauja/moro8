@@ -433,6 +433,7 @@ enum moro8_opcode
 	MORO8_OP_BVC = 0x50,
 	MORO8_OP_BVS = 0x70,
 	MORO8_OP_CLC = 0x18,
+	MORO8_OP_CLD = 0xD8,
 	// CLD
 	// CLI
 	MORO8_OP_CLV = 0xB8,
@@ -514,6 +515,8 @@ enum moro8_opcode
 	MORO8_OP_ROR_ABS = 0x6E,
 	MORO8_OP_ROR_ABS_X = 0x7E,
 	MORO8_OP_RTS = 0x60,
+	MORO8_OP_SEC = 0x38,
+	MORO8_OP_SED = 0xF8,
 	MORO8_OP_STA_ZP = 0x85,
 	MORO8_OP_STA_ZP_X = 0x95,
 	MORO8_OP_STA_ABS = 0x8D,
@@ -533,6 +536,10 @@ enum moro8_opcode
 	MORO8_OP_TXA = 0x8A,
 	MORO8_OP_TXS = 0x9A,
 	MORO8_OP_TYA = 0x98,
+	// Custom opcodes (non 6502)
+	MORO8_OP_DEA = 0x3A,
+	MORO8_OP_INA = 0x1A,
+	MORO8_OP_JMP_ABS_X = 0x7C,
 	// Number of opcodes
 	MORO8_OP_MAX
 };

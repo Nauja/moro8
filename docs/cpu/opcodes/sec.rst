@@ -1,7 +1,7 @@
 .. -*- coding: utf-8 -*-
-.. _jmp:
+.. _sec:
 
-JMP
+SEC
 ---
 
 .. module:: moro8
@@ -9,7 +9,7 @@ JMP
 .. contents::
    :local:
 
-Jump to New Location.
+Set Carry Flag.
 
 .. container:: moro8-opcode
 
@@ -18,22 +18,16 @@ Jump to New Location.
         .. container:: moro8-pre
 
                 ACTION
-                (PC+1) -> PCL
-                (PC+2) -> PCH
+                1 -> C
 
         .. container:: moro8-pre
 
                 FLAGS
                 N Z C I D V
-                - - - - - -
+                - - 1 - - -
 
     .. container:: moro8-synopsis moro8-pre
 
                 MODE          SYNTAX        HEX LEN TIM
-                Absolute      JMP $5597     $4C  3   3
-                Absolute,X    JMP $5597,X   $7C  3   6
-                Indirect      JMP ($5597)   $6C  3   5
+                Implied       SEC           $38  1   2
 
-.. note::
-
-    Not a 6502 addressing mode: (abs,X).
