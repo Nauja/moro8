@@ -211,19 +211,6 @@ void moro8_resume(moro8_vm* vm)
     }
 }
 
-size_t moro8_step(moro8_vm* vm)
-{
-    moro8_uword instruction = MORO8_GET_MEM(vm->registers.pc);
-
-#if MORO8_WITH_HANDLERS
-    // Lets custom handlers handle the instruction
-    if (vm->handlers[instruction] && vm->handlers[instruction](vm, instruction))
-    {
-        return MORO8_TRUE;
-    }
-#endif
-
-    moro8_uword operand = MORO8_GET_MEM(++vm->registers.pc);
 
 /** Get a double word operand */
 #define MORO8_DWORD_OPERAND (operand + (MORO8_GET_MEM(++vm->registers.pc) << 8))
@@ -299,23 +286,6 @@ size_t moro8_step(moro8_vm* vm)
 #define MORO8_AND(operand) MORO8_SET_AC(MORO8_AC & operand)
 #define MORO8_OR(operand) MORO8_SET_AC(MORO8_AC | operand)
 #define MORO8_XOR(operand) MORO8_SET_AC(MORO8_AC ^ operand)
-#define MORO8_ASL_AC() \
-{ \
-    MORO8_C = MORO8_IS_NEGATIVE(MORO8_AC); \
-    MORO8_AC = (MORO8_AC & 0x7F) << 1; \
-    MORO8_N = MORO8_IS_NEGATIVE(MORO8_AC); \
-    MORO8_Z = MORO8_AC == 0; \
-}
-#define MORO8_ASL(operand) \
-{ \
-    moro8_udword address = operand; \
-    moro8_uword value = MORO8_GET_MEM(address); \
-    MORO8_C = MORO8_IS_NEGATIVE(value); \
-    value = (value & 0x7F) << 1; \
-    MORO8_N = MORO8_IS_NEGATIVE(value); \
-    MORO8_Z = value == 0; \
-    MORO8_SET_MEM(address, value); \
-}
 #define MORO8_CMP(operand) \
 { \
     moro8_uword value = operand; \
@@ -341,23 +311,6 @@ size_t moro8_step(moro8_vm* vm)
     MORO8_Z = reg == 0; \
     MORO8_DEC_PC; \
 }
-#define MORO8_LSR_AC() \
-{ \
-    MORO8_C = MORO8_AC & 0x1; \
-    MORO8_N = 0; \
-    MORO8_AC = (MORO8_AC & 0xFE) >> 1; \
-    MORO8_Z = MORO8_AC == 0; \
-}
-#define MORO8_LSR(operand) \
-{ \
-    moro8_udword address = operand; \
-    moro8_uword value = MORO8_GET_MEM(address); \
-    MORO8_C = value & 0x1; \
-    MORO8_N = 0; \
-    value = (value & 0xFE) >> 1; \
-    MORO8_Z = value == 0; \
-    MORO8_SET_MEM(address, value); \
-}
 #define MORO8_TRANSFER(from, to) \
 { \
     to = from; \
@@ -378,6 +331,78 @@ size_t moro8_step(moro8_vm* vm)
     MORO8_V = (value & 0x70) != 0; \
     MORO8_Z = (MORO8_AC & value) == 0; \
 }
+
+/**
+ * Performs ASL/ROL opcode with accumulator.
+ * @param[in] vm Some vm
+ * @param[in] lb Lower byte (0 for ASL, C for ROL)
+ */
+static inline void _moro8_rol_ac(moro8_vm* vm, moro8_uword lb)
+{
+    MORO8_C = MORO8_IS_NEGATIVE(MORO8_AC);
+    MORO8_AC = ((MORO8_AC & 0x7F) << 1) + lb;
+    MORO8_N = MORO8_IS_NEGATIVE(MORO8_AC);
+    MORO8_Z = MORO8_AC == 0;
+}
+
+/**
+ * Performs ASL/ROL opcode with memory.
+ * @param[in] vm Some vm
+ * @param[in] address Memory address
+ * @param[in] lb Lower byte (0 for ASL, C for ROL)
+ */
+static inline void _moro8_rol(moro8_vm* vm, moro8_udword address, moro8_uword lb)
+{
+    moro8_uword value = MORO8_GET_MEM(address);
+    MORO8_C = MORO8_IS_NEGATIVE(value);
+    value = ((value & 0x7F) << 1) + lb;
+    MORO8_N = MORO8_IS_NEGATIVE(value);
+    MORO8_Z = value == 0;
+    MORO8_SET_MEM(address, value);
+}
+
+/**
+ * Performs LSR/ROR opcode with accumulator.
+ * @param[in] vm Some vm
+ * @param[in] hb Higher byte (0 for LSR, C for ROR)
+ */
+static inline void _moro8_ror_ac(moro8_vm* vm, moro8_uword hb)
+{
+    MORO8_C = MORO8_AC & 0x1;
+    MORO8_N = hb != 0;
+    MORO8_AC = ((MORO8_AC & 0xFE) >> 1) + (hb << 7);
+    MORO8_Z = MORO8_AC == 0;
+}
+
+/**
+ * Performs LSR/ROR opcode with memory.
+ * @param[in] vm Some vm
+ * @param[in] address Memory address
+ * @param[in] hb Higher byte (0 for LSR, C for ROR)
+ */
+static inline void _moro8_ror(moro8_vm* vm, moro8_udword address, moro8_uword hb)
+{
+    moro8_uword value = MORO8_GET_MEM(address);
+    MORO8_C = value & 0x1;
+    MORO8_N = hb != 0;
+    value = ((value & 0xFE) >> 1) + (hb << 7);
+    MORO8_Z = value == 0;
+    MORO8_SET_MEM(address, value);
+}
+
+size_t moro8_step(moro8_vm* vm)
+{
+    moro8_uword instruction = MORO8_GET_MEM(vm->registers.pc);
+
+#if MORO8_WITH_HANDLERS
+    // Lets custom handlers handle the instruction
+    if (vm->handlers[instruction] && vm->handlers[instruction](vm, instruction))
+    {
+        return MORO8_TRUE;
+    }
+#endif
+
+    moro8_uword operand = MORO8_GET_MEM(++vm->registers.pc);
 
     if (instruction == 0)
     {
@@ -435,20 +460,20 @@ size_t moro8_step(moro8_vm* vm)
         MORO8_AND(MORO8_GET_MEM_IND_Y());
         break;
     case MORO8_OP_ASL_AC:
-        MORO8_ASL_AC();
+        _moro8_rol_ac(vm, 0);
         MORO8_DEC_PC;
         break;
     case MORO8_OP_ASL_ZP:
-        MORO8_ASL(MORO8_ADDR_ZP);
+        _moro8_rol(vm, MORO8_ADDR_ZP, 0);
         break;
     case MORO8_OP_ASL_ZP_X:
-        MORO8_ASL(MORO8_ADDR_ZP_X);
+        _moro8_rol(vm, MORO8_ADDR_ZP_X, 0);
         break;
     case MORO8_OP_ASL_ABS:
-        MORO8_ASL(MORO8_ADDR_ABS);
+        _moro8_rol(vm, MORO8_ADDR_ABS, 0);
         break;
     case MORO8_OP_ASL_ABS_X:
-        MORO8_ASL(MORO8_ADDR_ABS_X);
+        _moro8_rol(vm, MORO8_ADDR_ABS_X, 0);
         break;
     case MORO8_OP_BCC:
         MORO8_BRANCH(MORO8_C == 0);
@@ -646,20 +671,20 @@ size_t moro8_step(moro8_vm* vm)
         MORO8_SET_Y(MORO8_GET_MEM_ABS_X());
         break;
     case MORO8_OP_LSR_AC:
-        MORO8_LSR_AC();
+        _moro8_ror_ac(vm, 0);
         MORO8_DEC_PC;
         break;
     case MORO8_OP_LSR_ZP:
-        MORO8_LSR(MORO8_ADDR_ZP);
+        _moro8_ror(vm, MORO8_ADDR_ZP, 0);
         break;
     case MORO8_OP_LSR_ZP_X:
-        MORO8_LSR(MORO8_ADDR_ZP_X);
+        _moro8_ror(vm, MORO8_ADDR_ZP_X, 0);
         break;
     case MORO8_OP_LSR_ABS:
-        MORO8_LSR(MORO8_ADDR_ABS);
+        _moro8_ror(vm, MORO8_ADDR_ABS, 0);
         break;
     case MORO8_OP_LSR_ABS_X:
-        MORO8_LSR(MORO8_ADDR_ABS_X);
+        _moro8_ror(vm, MORO8_ADDR_ABS_X, 0);
         break;
     case MORO8_OP_NOP:
         MORO8_DEC_PC;
@@ -707,6 +732,38 @@ size_t moro8_step(moro8_vm* vm)
         vm->registers.sp++;
         MORO8_SET_SR(MORO8_GET_STACK());
         MORO8_DEC_PC;
+        break;
+    case MORO8_OP_ROL_AC:
+        _moro8_rol_ac(vm, MORO8_C);
+        MORO8_DEC_PC;
+        break;
+    case MORO8_OP_ROL_ZP:
+        _moro8_rol(vm, MORO8_ADDR_ZP, MORO8_C);
+        break;
+    case MORO8_OP_ROL_ZP_X:
+        _moro8_rol(vm, MORO8_ADDR_ZP_X, MORO8_C);
+        break;
+    case MORO8_OP_ROL_ABS:
+        _moro8_rol(vm, MORO8_ADDR_ABS, MORO8_C);
+        break;
+    case MORO8_OP_ROL_ABS_X:
+        _moro8_rol(vm, MORO8_ADDR_ABS_X, MORO8_C);
+        break;
+    case MORO8_OP_ROR_AC:
+        _moro8_ror_ac(vm, MORO8_C);
+        MORO8_DEC_PC;
+        break;
+    case MORO8_OP_ROR_ZP:
+        _moro8_ror(vm, MORO8_ADDR_ZP, MORO8_C);
+        break;
+    case MORO8_OP_ROR_ZP_X:
+        _moro8_ror(vm, MORO8_ADDR_ZP_X, MORO8_C);
+        break;
+    case MORO8_OP_ROR_ABS:
+        _moro8_ror(vm, MORO8_ADDR_ABS, MORO8_C);
+        break;
+    case MORO8_OP_ROR_ABS_X:
+        _moro8_ror(vm, MORO8_ADDR_ABS_X, MORO8_C);
         break;
     case MORO8_OP_RTS:
         vm->registers.sp++;
