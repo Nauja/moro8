@@ -1,7 +1,7 @@
 .. -*- coding: utf-8 -*-
-.. _cld:
+.. _cpx:
 
-CLD
+CPX
 ---
 
 .. module:: moro8
@@ -9,7 +9,7 @@ CLD
 .. contents::
    :local:
 
-Clear Decimal Mode.
+Compare Memory and Index X.
 
 .. container:: moro8-opcode
 
@@ -18,16 +18,17 @@ Clear Decimal Mode.
         .. container:: moro8-pre
 
                 ACTION
-                0 -> D
+                X - M
 
         .. container:: moro8-pre
 
                 FLAGS
                 N Z C I D V
-                - - - - 0 -
+                + + + - - -
 
     .. container:: moro8-synopsis moro8-pre
 
                 MODE          SYNTAX        HEX LEN TIM
-                Implied       CLD           $D8  1   2
-
+                Immediate     CPX #$44      $E0  2   2
+                Zero Page     CPX $44       $E4  2   3
+                Absolute      CPX $4400     $EC  3   4

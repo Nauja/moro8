@@ -1,7 +1,7 @@
 .. -*- coding: utf-8 -*-
-.. _sed:
+.. _cpy:
 
-SED
+CPY
 ---
 
 .. module:: moro8
@@ -9,7 +9,7 @@ SED
 .. contents::
    :local:
 
-Set Decimal Flag.
+Compare Memory and Index Y.
 
 .. container:: moro8-opcode
 
@@ -18,16 +18,17 @@ Set Decimal Flag.
         .. container:: moro8-pre
 
                 ACTION
-                1 -> D
+                Y - M
 
         .. container:: moro8-pre
 
                 FLAGS
                 N Z C I D V
-                - - - - 1 -
+                + + + - - -
 
     .. container:: moro8-synopsis moro8-pre
 
                 MODE          SYNTAX        HEX LEN TIM
-                Implied       SED           $F8  1   2
-
+                Immediate     CPY #$44      $C0  2   2
+                Zero Page     CPY $44       $C4  2   3
+                Absolute      CPY $4400     $CC  3   4

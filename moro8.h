@@ -11,9 +11,9 @@ extern "C"
 /** Major version of moro8. */
 #define MORO8_VERSION_MAJOR 0
 /** Minor version of moro8. */
-#define MORO8_VERSION_MINOR 1
+#define MORO8_VERSION_MINOR 0
 /** Patch version of moro8. */
-#define MORO8_VERSION_PATCH 0
+#define MORO8_VERSION_PATCH 1
 
 /* Define to 1 if you have the <stdio.h> header file. */
 #ifndef HAVE_STDIO_H
@@ -262,7 +262,7 @@ struct moro8_registers {
         moro8_uword z:1;
         /** Interrupt. */
         moro8_uword i:1;
-        /** Decimal. */
+        /** Decimal (not implemented). */
         moro8_uword d:1;
         /** Break (not used). */
         moro8_uword b:1;
@@ -429,13 +429,10 @@ enum moro8_opcode
 	MORO8_OP_BMI = 0x30,
 	MORO8_OP_BNE = 0xD0,
 	MORO8_OP_BPL = 0x10,
-	// BRK
 	MORO8_OP_BVC = 0x50,
 	MORO8_OP_BVS = 0x70,
 	MORO8_OP_CLC = 0x18,
 	MORO8_OP_CLD = 0xD8,
-	// CLD
-	// CLI
 	MORO8_OP_CLV = 0xB8,
 	MORO8_OP_CMP_IMM = 0xC9,
 	MORO8_OP_CMP_ZP = 0xC5,
@@ -445,6 +442,12 @@ enum moro8_opcode
 	MORO8_OP_CMP_ABS_Y = 0xD9,
 	MORO8_OP_CMP_IND_X = 0xC1,
 	MORO8_OP_CMP_IND_Y = 0xD1,
+	MORO8_OP_CPX_IMM = 0xE0,
+	MORO8_OP_CPX_ZP = 0xE4,
+	MORO8_OP_CPX_ABS = 0xEC,
+	MORO8_OP_CPY_IMM = 0xC0,
+	MORO8_OP_CPY_ZP = 0xC4,
+	MORO8_OP_CPY_ABS = 0xCC,
 	MORO8_OP_DEC_ZP = 0xC6,
 	MORO8_OP_DEC_ZP_X = 0xD6,
 	MORO8_OP_DEC_ABS = 0xCE,
