@@ -1,7 +1,7 @@
 .. -*- coding: utf-8 -*-
-.. _clc:
+.. _clv:
 
-CLC
+CLV
 ---
 
 .. module:: moro8
