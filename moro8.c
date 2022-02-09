@@ -298,9 +298,8 @@ static inline void _moro8_bit(moro8_vm* vm, moro8_uword operand)
 #define _moro8_branch(vm, condition, operand) \
 { \
     if (condition) { \
-        MORO8_PC += ((moro8_word)operand) - 1; \
+        MORO8_PC += ((moro8_word)operand); \
     } \
-    MORO8_DEC_PC; \
 }
 
  /**
