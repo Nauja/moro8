@@ -39,4 +39,4 @@ Compare Memory with Accumulator.
                 Indirect,Y    CMP ($44),Y   $D1  2   5+
 
 Bits 7 and 6 of operand are transfered to bit 7 and 6 of SR (N,V);
-the zero-flag is set to the result of operand AND accumulator.
+the zero-flag is set if operand == accumulator.

@@ -16,10 +16,9 @@ jobs:
     env:
       CC: clang
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
       - name: Install Dependencies
         run: sudo apt install -y make clang
       - run: clang --version
@@ -27,22 +26,20 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. || (rm -rf * && cmake ..)
+          cmake ..
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
   amd64_linux_gcc:
     runs-on: ubuntu-latest
     env:
       CC: gcc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
       - name: Install Dependencies
         run: sudo apt install -y make gcc
       - run: gcc --version
@@ -50,43 +47,39 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. || (rm -rf * && cmake ..)
+          cmake ..
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
   amd64_macos_clang:
     runs-on: macos-latest
     env:
       CC: clang
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
       - run: cc --version
       - name: Build moro8
         run: |
           mkdir -p build
           cd build
-          cmake .. || (rm -rf * && cmake ..)
+          cmake ..
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
   amd64_macos_gcc:
     runs-on: macos-latest
     env:
       CC: gcc-11
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
       - name: Install Dependencies
         run: brew install gcc@11
       - run: gcc-11 --version
@@ -94,25 +87,23 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. || (rm -rf * && cmake ..)
+          cmake ..
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
   amd64_windows_clang:
     runs-on: windows-2019
     env:
       CC: clang
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
+      - run: echo "C:\\msys64\\usr\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install Dependencies
         run: |
-          echo "C:\\msys64\\usr\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           pacman --version
           pacman -Sy
           pacman --noconfirm -S pacman-mirrors
@@ -123,22 +114,20 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. || (rm -rf * && cmake ..)
+          cmake .. -G "MinGW Makefiles"
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
   amd64_windows_gcc:
     runs-on: windows-2019
     env:
       CC: gcc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
       - name: Install Dependencies
         run: echo "C:\\msys64\\usr\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - run: gcc --version
@@ -146,31 +135,27 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. || (rm -rf * && cmake ..)
+          cmake .. -G "MinGW Makefiles"
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
   amd64_windows_vs2019:
     runs-on: windows-2019
-    env:
-      CC: gcc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1000
       - uses: ilammy/msvc-dev-cmd@v1
+      - run: cl
       - name: Build moro8
         run: |
           mkdir -p build
           cd build
-          cmake .. -G "Visual Studio 16 2019" || (rm -rf * && cmake .. -G "Visual Studio 16 2019")
+          cmake .. -G "Visual Studio 16 2019"
           cmake --build .
-          make
       - name: Test moro8
         run: |
           cd build
-          make test ARGS="-V"
+          cmake --build . --target test ARGS="-V"
