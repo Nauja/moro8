@@ -66,9 +66,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1000
-      - name: Install Dependencies
-        run: sudo apt install -y make clang
-      - run: clang --version
+      - run: cc --version
       - name: Build moro8
         run: |
           mkdir -p build
@@ -83,15 +81,15 @@ jobs:
   amd64_macos_gcc:
     runs-on: macos-latest
     env:
-      CC: gcc
+      CC: gcc-11
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
           fetch-depth: 1000
       - name: Install Dependencies
-        run: sudo apt install -y make gcc
-      - run: gcc --version
+        run: brew install gcc@11
+      - run: gcc-11 --version
       - name: Build moro8
         run: |
           mkdir -p build
