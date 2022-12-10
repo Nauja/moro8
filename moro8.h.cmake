@@ -121,7 +121,7 @@ extern "C"
 #endif
 #endif
 
-#if defined(MORO8_DOXYGEN)
+#if MORO8_DOXYGEN
 #undef MORO8_MINIMALIST
 /**
 * Strips extra features from moro8.
@@ -1108,7 +1108,7 @@ MORO8_PUBLIC(int) moro8_equal(const struct moro8_vm* left, const struct moro8_vm
 
 #endif
 
-#ifdef MORO8_DOXYGEN
+#if MORO8_DOXYGEN
 /**
  * Gets the value in accumulator register.
  * @param[in] vm Some vm

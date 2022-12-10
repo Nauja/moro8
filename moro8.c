@@ -16,7 +16,6 @@ typedef struct moro8_hooks moro8_hooks;
 typedef struct moro8_registers moro8_registers;
 typedef struct moro8_bus moro8_bus;
 typedef struct moro8_vm moro8_vm;
-typedef struct moro8_array_memory moro8_array_memory;
 typedef enum moro8_register moro8_register;
 
 #if defined(_MSC_VER)
@@ -72,6 +71,8 @@ MORO8_PUBLIC(void) moro8_init_hooks(struct moro8_hooks* hooks)
 #define MORO8_SET_MEM(addr, value) vm->memory->set_word(vm->memory, addr, value)
 
 #if !MORO8_MINIMALIST
+typedef struct moro8_array_memory moro8_array_memory;
+
 MORO8_PUBLIC(moro8_array_memory*) moro8_array_memory_create()
 {
     moro8_array_memory* memory = (moro8_array_memory*)_MORO8_MALLOC(sizeof(moro8_array_memory));
