@@ -878,7 +878,7 @@ MORO8_PUBLIC(void) moro8_array_memory_init(struct moro8_array_memory* memory);
  * Available only if built with MORO8_MINIMALIST=0
  * @param[in] memory Some moro8_array_memory instance
  */
-MORO8_PUBLIC(void) moro8_array_memory_delete(struct moro8_array_memory* vm);
+MORO8_PUBLIC(void) moro8_array_memory_delete(struct moro8_array_memory* memory);
 
 /**
  * Gets size bytes from memory starting at offset.

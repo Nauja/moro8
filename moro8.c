@@ -321,7 +321,8 @@ static inline void _moro8_bit(moro8_vm* vm, moro8_uword operand)
  /**
   * Performs CMP/CPX/CPY opcode.
   * @param[in] vm Some vm
-  * @param[in] operand Value to compare
+  * @param[in] left Value to compare
+  * @param[in] right Value to compare
   */
 static inline void _moro8_cmp(moro8_vm* vm, moro8_uword left, moro8_uword right)
 {
