@@ -353,26 +353,6 @@ struct moro8_bus {
 	void (*reset)(struct moro8_bus* bus);
 };
 
-/**
- * Memory implementation using a continuous array of MORO8_MEMORY_SIZE bytes.
- *
- * This is suitable for running on systems with more than MORO8_MEMORY_SIZE
- * available RAM.
- */
-struct moro8_array_memory {
-	/**
-	 * The bus connected to this memory.
-	 *
-	 * You have to connect it to the CPU for it to work.
-	 */
-	struct moro8_bus bus;
-	/**
-	 * A continuous array of MORO8_MEMORY_SIZE bytes allowing for fast read
-	 * and write operations.
-	 */
-	moro8_uword buffer[MORO8_MEMORY_SIZE];
-};
-
 /** Struct for the vm emulating the moro8 CPU. */
 struct moro8_vm {
 	/** Registers used by the CPU. */
@@ -382,8 +362,8 @@ struct moro8_vm {
 #if MORO8_WITH_HANDLERS
 	/**
 	 * Registered handlers for custom handling of opcodes.
-     * @note
-     * Available only if built with MORO8_WITH_HANDLERS=1
+	 * @note
+	 * Available only if built with MORO8_WITH_HANDLERS=1
 	 */
 	moro8_handler handlers[0x100];
 #endif
@@ -587,121 +567,6 @@ enum moro8_register
  * @param[in] hooks Hooks configuration
  */
 MORO8_PUBLIC(void) moro8_init_hooks(struct moro8_hooks *hooks);
-
-/**
- * Allocates and initializes a new moro8_array_memory instance.
- * @code
- * struct moro8_array_memory* memory = moro8_array_memory_create();
- * 
- * ...
- * 
- * // Don't forget to free up memory
- * moro8_array_memory_delete(memory);
- * @endcode
- * @return Pointer to new moro8_array_memory instance.
- */
-MORO8_PUBLIC(struct moro8_array_memory*) moro8_array_memory_create();
-
-/**
- * Initializes an already allocated moro8_array_memory instance.
- * @code
- * struct moro8_array_memory memory;
- * moro8_array_memory_init(&memory);
- * @endcode
- *
- * This initializes the bus correctly with:
- * @code 
- * memory.bus.get = &moro8_array_memory_get;
- * memory.bus.set = &moro8_array_memory_set;
- * @endcode
- * @param[in] memory Some moro8_array_memory instance
- */
-MORO8_PUBLIC(void) moro8_array_memory_init(struct moro8_array_memory* memory);
-
-/**
- * Frees up memory allocated for a moro8_array_memory instance.
- * @code
- * struct moro8_array_memory* memory = moro8_array_memory_create();
- * 
- * ...
- * 
- * // Don't forget to free up memory
- * moro8_array_memory_delete(memory);
- * @endcode
- * @param[in] memory Some moro8_array_memory instance
- */
-MORO8_PUBLIC(void) moro8_array_memory_delete(struct moro8_array_memory* vm);
-
-/**
- * Gets size bytes from memory starting at offset.
- *
- * @code
- * struct moro8_array_memory memory;
- * moro8_array_memory_init(&memory);
- *
- * moro8_uword buffer[4];
- * 
- * moro8_array_memory_get(&memory, buffer, 0x1000, 4);
- * @endcode
- * @param[in] memory Some moro8_array_memory instance
- * @param[in] buffer Pointer to buffer for storing the bytes
- * @param[in] offset Starting offset in memory
- * @param[in] size Size of buffer
- * @return The number of copied bytes.
- */
-MORO8_PUBLIC(moro8_udword) moro8_array_memory_get(const struct moro8_array_memory* memory, moro8_uword* buffer, moro8_udword offset, moro8_udword size);
-
-/**
- * Fills the memory with a buffer of bytes.
- * @code
- * struct moro8_array_memory memory;
- * moro8_array_memory_init(&memory);
- *
- * moro8_uword buffer[4] = { ... };
- * 
- * moro8_array_memory_set(&memory, buffer, 0x1000, 4);
- * @endcode
- * @param[in] memory Some moro8_array_memory instance
- * @param[in] buffer Pointer to buffer containing the bytes to copy
- * @param[in] offset Starting offset in memory
- * @param[in] size Size of buffer
- * @return The number of copied bytes.
- */
-MORO8_PUBLIC(moro8_udword) moro8_array_memory_set(struct moro8_array_memory* memory, const moro8_uword* buffer, moro8_udword offset, moro8_udword size);
-
-/**
- * Gets a single word from memory.
- * @code
- * struct moro8_array_memory memory;
- * moro8_array_memory_init(&memory);
- *
- * moro8_uword value = moro8_array_memory_get_word(&memory, 0xFF);
- * @endcode
- * @param[in] memory Some moro8_array_memory instance
- * @param[in] address Absolute address
- * @return Word at requested address.
- */
-MORO8_PUBLIC(moro8_uword) moro8_array_memory_get_word(const struct moro8_array_memory* memory, moro8_udword address);
-
-/**
- * Sets a single word to memory.
- * @code
- * struct moro8_array_memory memory;
- * moro8_array_memory_init(&memory);
- *
- * moro8_array_memory_set_word(&memory, 0xFF, 0x1);
- * @endcode
- * @param[in] memory Some moro8_array_memory instance
- * @param[in] address Absolute address
- * @param[in] value New value
- */
-MORO8_PUBLIC(void) moro8_array_memory_set_word(struct moro8_array_memory* memory, moro8_udword address, moro8_uword value);
-
-/**
- * Resets memory.
- * @param[in] memory Some moro8_array_memory instance
- */
-MORO8_PUBLIC(void) moro8_array_memory_reset(struct moro8_array_memory* memory);
 
 /**
  * Allocates and initializes a new moro8_vm instance.
@@ -940,21 +805,183 @@ MORO8_PUBLIC(struct moro8_vm*) moro8_parse(struct moro8_vm* vm, const char* buf,
 #if !MORO8_MINIMALIST
 
 /**
- * Gets a double word from memory.
+ * Memory implementation using a continuous array of MORO8_MEMORY_SIZE bytes.
+ *
+ * This is suitable for running on systems with more than MORO8_MEMORY_SIZE
+ * available RAM.
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ */
+struct moro8_array_memory {
+	/**
+	 * The bus connected to this memory.
+	 *
+	 * You have to connect it to the CPU for it to work.
+	 */
+	struct moro8_bus bus;
+	/**
+	 * A continuous array of MORO8_MEMORY_SIZE bytes allowing for fast read
+	 * and write operations.
+	 */
+	moro8_uword buffer[MORO8_MEMORY_SIZE];
+};
+
+/**
+ * Allocates and initializes a new moro8_array_memory instance.
+ * @code
+ * struct moro8_array_memory* memory = moro8_array_memory_create();
+ *
+ * ...
+ *
+ * // Don't forget to free up memory
+ * moro8_array_memory_delete(memory);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @return Pointer to new moro8_array_memory instance.
+ */
+MORO8_PUBLIC(struct moro8_array_memory*) moro8_array_memory_create();
+
+/**
+ * Initializes an already allocated moro8_array_memory instance.
  * @code
  * struct moro8_array_memory memory;
  * moro8_array_memory_init(&memory);
+ * @endcode
  *
- * moro8_udword value = moro8_array_memory_get_dword(&memory, 0xFF);
+ * This initializes the bus correctly with:
+ * @code
+ * memory.bus.get = &moro8_array_memory_get;
+ * memory.bus.set = &moro8_array_memory_set;
  * @endcode
  *
  * @note
  * Available only if built with MORO8_MINIMALIST=0
  * @param[in] memory Some moro8_array_memory instance
+ */
+MORO8_PUBLIC(void) moro8_array_memory_init(struct moro8_array_memory* memory);
+
+/**
+ * Frees up memory allocated for a moro8_array_memory instance.
+ * @code
+ * struct moro8_array_memory* memory = moro8_array_memory_create();
+ *
+ * ...
+ *
+ * // Don't forget to free up memory
+ * moro8_array_memory_delete(memory);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_array_memory instance
+ */
+MORO8_PUBLIC(void) moro8_array_memory_delete(struct moro8_array_memory* vm);
+
+/**
+ * Gets size bytes from memory starting at offset.
+ *
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_uword buffer[4];
+ *
+ * moro8_memory_get(&memory, buffer, 0x1000, 4);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_bus instance
+ * @param[in] buffer Pointer to buffer for storing the bytes
+ * @param[in] offset Starting offset in memory
+ * @param[in] size Size of buffer
+ * @return The number of copied bytes.
+ */
+MORO8_PUBLIC(moro8_udword) moro8_memory_get(const struct moro8_bus* memory, moro8_uword* buffer, moro8_udword offset, moro8_udword size);
+
+/**
+ * Fills the memory with a buffer of bytes.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_uword buffer[4] = { ... };
+ *
+ * moro8_memory_set(&memory, buffer, 0x1000, 4);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_bus instance
+ * @param[in] buffer Pointer to buffer containing the bytes to copy
+ * @param[in] offset Starting offset in memory
+ * @param[in] size Size of buffer
+ * @return The number of copied bytes.
+ */
+MORO8_PUBLIC(moro8_udword) moro8_memory_set(struct moro8_bus* memory, const moro8_uword* buffer, moro8_udword offset, moro8_udword size);
+
+/**
+ * Gets a single word from memory.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_uword value = moro8_memory_get_word(&memory, 0xFF);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_bus instance
+ * @param[in] address Absolute address
+ * @return Word at requested address.
+ */
+MORO8_PUBLIC(moro8_uword) moro8_memory_get_word(const struct moro8_bus* memory, moro8_udword address);
+
+/**
+ * Sets a single word to memory.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_memory_set_word(&memory, 0xFF, 0x1);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_bus instance
+ * @param[in] address Absolute address
+ * @param[in] value New value
+ */
+MORO8_PUBLIC(void) moro8_memory_set_word(struct moro8_bus* memory, moro8_udword address, moro8_uword value);
+
+/**
+ * Resets memory.
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_bus instance
+ */
+MORO8_PUBLIC(void) moro8_memory_reset(struct moro8_bus* memory);
+
+/**
+ * Gets a double word from memory.
+ * @code
+ * struct moro8_array_memory memory;
+ * moro8_array_memory_init(&memory);
+ *
+ * moro8_udword value = moro8_memory_get_dword(&memory, 0xFF);
+ * @endcode
+ *
+ * @note
+ * Available only if built with MORO8_MINIMALIST=0
+ * @param[in] memory Some moro8_bus instance
  * @param[in] address Absolute address
  * @return Double word at requested address.
  */
-MORO8_PUBLIC(moro8_udword) moro8_array_memory_get_dword(const struct moro8_array_memory* memory, moro8_udword address);
+MORO8_PUBLIC(moro8_udword) moro8_memory_get_dword(const struct moro8_bus* memory, moro8_udword address);
 
 /**
  * Sets a double word to memory.
@@ -962,16 +989,16 @@ MORO8_PUBLIC(moro8_udword) moro8_array_memory_get_dword(const struct moro8_array
  * struct moro8_array_memory memory;
  * moro8_array_memory_init(&memory);
  *
- * moro8_array_memory_set_dword(&memory, 0xFF, 0x1);
+ * moro8_memory_set_dword(&memory, 0xFF, 0x1);
  * @endcode
  *
  * @note
  * Available only if built with MORO8_MINIMALIST=0
- * @param[in] memory Some moro8_array_memory instance
+ * @param[in] memory Some moro8_bus instance
  * @param[in] address Absolute address
  * @param[in] value New value
  */
-MORO8_PUBLIC(void) moro8_array_memory_set_dword(struct moro8_array_memory* memory, moro8_udword address, moro8_udword value);
+MORO8_PUBLIC(void) moro8_memory_set_dword(struct moro8_bus* memory, moro8_udword address, moro8_udword value);
 
 /**
  * Gets a single byte from memory.
