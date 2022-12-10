@@ -32,6 +32,23 @@ jobs:
         run: |
           cd build
           cmake --build . --target test ARGS="-V"
+  amd64_linux_clang_minimalist:
+    runs-on: ubuntu-latest
+    env:
+      CC: clang
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Dependencies
+        run: sudo apt install -y make clang
+      - run: clang --version
+      - name: Build moro8
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DMORO8_MINIMALIST=ON
+          cmake --build .
   amd64_linux_gcc:
     runs-on: ubuntu-latest
     env:

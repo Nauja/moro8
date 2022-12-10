@@ -45,6 +45,11 @@ extern "C"
 #cmakedefine MORO8_DOXYGEN 1
 #endif
 
+/* Define to 1 to build a minimalist version. */
+#ifndef MORO8_MINIMALIST
+#cmakedefine MORO8_MINIMALIST 1
+#endif
+
 #ifndef MORO8_MALLOC
 #ifdef HAVE_MALLOC
 /**
