@@ -3,11 +3,9 @@ name: CI docs
 on:
   push:
     paths-ignore:
-      - "**.md"
       - "LICENSE"
   pull_request:
     paths-ignore:
-      - "**.md"
       - "LICENSE"
 
 jobs:
