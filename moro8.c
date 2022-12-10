@@ -71,6 +71,7 @@ MORO8_PUBLIC(void) moro8_init_hooks(struct moro8_hooks* hooks)
 #define MORO8_GET_MEM(addr) vm->memory->get_word(vm->memory, addr)
 #define MORO8_SET_MEM(addr, value) vm->memory->set_word(vm->memory, addr, value)
 
+#if !MORO8_MINIMALIST
 MORO8_PUBLIC(moro8_array_memory*) moro8_array_memory_create()
 {
     moro8_array_memory* memory = (moro8_array_memory*)_MORO8_MALLOC(sizeof(moro8_array_memory));
@@ -112,7 +113,6 @@ static moro8_udword moro8_array_memory_set(struct moro8_bus* memory, const moro8
     return size;
 }
 
-#if !MORO8_MINIMALIST
 static moro8_uword moro8_array_memory_get_word(const struct moro8_bus* memory, moro8_udword address)
 {
     return ((moro8_array_memory*)memory)->buffer[address];
@@ -136,7 +136,6 @@ static void moro8_array_memory_set_dword(struct moro8_bus* memory, moro8_udword 
         ((moro8_array_memory*)memory)->buffer[address + 1] = MORO8_HIGH(value);
     }
 }
-#endif
 
 static void moro8_array_memory_reset(struct moro8_bus* memory)
 {
@@ -162,6 +161,7 @@ MORO8_PUBLIC(void) moro8_array_memory_delete(moro8_array_memory* memory)
 {
     _MORO8_FREE(memory);
 }
+#endif
 
 MORO8_PUBLIC(moro8_vm*) moro8_create()
 {

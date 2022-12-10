@@ -101,7 +101,7 @@ if (MORO8_STATIC)
 endif()
 
 # include cmocka
-if (MORO8_UNIT_TESTING)
+if (MORO8_UNIT_TESTING AND NOT MORO8_MINIMALIST)
     if (NOT MORO8_STATIC)
         message("Skip unit testing because MORO8_STATIC option is off")
 
