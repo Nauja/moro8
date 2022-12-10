@@ -41,7 +41,7 @@ struct moro8_array_memory memory;
 moro8_array_memory_init(&memory);
 
 // Link vm to memory
-moro8_set_memory_bus(&vm, &memory);
+moro8_set_memory_bus(&vm, &memory.bus);
 
 // Load this small program to ROM and run
 moro8_uword prog[] = {
@@ -52,7 +52,7 @@ moro8_load(&vm, prog, 4);
 moro8_run(&vm);
 
 // Print result in accumulator register
-printf("Result of 2 + 3 is %d", moro8_get_a(&vm));
+printf("Result of 2 + 3 is %d", moro8_get_ac(&vm));
 ```
 
 You can notice that we have two distinct objects, the vm itself, and the memory.
