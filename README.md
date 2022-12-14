@@ -106,7 +106,7 @@ cd build
 cmake ..
 ```
 
-CMake will correctly configure the defines at the top of [moro8.h](https://github.com/Nauja/moro8/blob/main/fs.h) for your system.
+CMake will correctly configure the defines at the top of [moro8.h](https://github.com/Nauja/moro8/blob/main/moro8.h) for your system.
 
 You can then build this library manually as described above, or by using:
 
