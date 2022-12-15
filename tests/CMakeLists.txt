@@ -1,7 +1,5 @@
 project(moro8-tests C)
 
-include(ExternalProject)
-
 # CMocka
 set(CMOCKA_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vendor/cmocka")
 set(CMOCKA_INCLUDE_DIR "${CMOCKA_SOURCE_DIR}/include")
@@ -33,33 +31,6 @@ add_dependencies(cmocka_vendor cmocka)
 message("CMOCKA_BINARY_DIR=${CMOCKA_BINARY_DIR}")
 message("CMOCKA_LIBRARY=${CMOCKA_LIBRARY}")
 
-# libfs
-set(LIBFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vendor/libfs")
-set(LIBFS_INCLUDE_DIR "${LIBFS_SOURCE_DIR}")
-set(LIBFS_BINARY_DIR "${LIBFS_SOURCE_DIR}/build")
-
-ExternalProject_Add(libfs
-  PREFIX libfs
-  SOURCE_DIR ${LIBFS_SOURCE_DIR}
-  BINARY_DIR ${LIBFS_BINARY_DIR}
-  INSTALL_COMMAND ""
-  CMAKE_ARGS
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DLIBFS_STATIC=On
-        -DLIBFS_UNIT_TESTING=Off
-        -DLIBFS_DOXYGEN=Off
-)
-
-add_library(libfs_vendor STATIC SHARED IMPORTED)
-
-if(MSVC)
-  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/${CMAKE_CFG_INTDIR}/libfs.lib")
-else()
-  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/libfs.a")
-endif()
-
-add_dependencies(libfs_vendor libfs)
-
 # moro8 tests
 set(_TESTS
     test_array_memory
@@ -75,7 +46,9 @@ include_directories(${CMOCKA_INCLUDE_DIR}
 foreach(_TEST ${_TESTS})
     add_cmocka_test(moro8-${_TEST}
                     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${_TEST}.c
-                    COMPILE_OPTIONS ${DEFAULT_C_COMPILE_FLAGS}
+                    COMPILE_OPTIONS
+                        ${DEFAULT_C_COMPILE_FLAGS}
+                        -DMORO8_WITH_CLI=OFF
                     LINK_LIBRARIES ${CMOCKA_LIBRARY} ${LIBFS_LIBRARY} ${MORO8_STATIC_LIB}
     )
     
@@ -84,6 +57,9 @@ foreach(_TEST ${_TESTS})
             ${CMAKE_BINARY_DIR}
             ${CMOCKA_BINARY_DIR}
             ${LIBFS_BINARY_DIR})
+
+    # Link cmocka
+    add_dependencies(moro8-${_TEST} cmocka)
 
     # Link libfs
     add_dependencies(moro8-${_TEST} libfs)
