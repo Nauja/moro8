@@ -16,7 +16,7 @@ typedef struct test_state
     char input[LIBFS_MAX_PATH];
     char expected[LIBFS_MAX_PATH];
     char output[LIBFS_MAX_PATH];
-    moro8_vm* vm;
+    moro8_cpu* cpu;
 } test_state;
 
 /**
@@ -25,23 +25,23 @@ typedef struct test_state
  */
 void test_func(void** initial_state) {
     const test_state* state = (const test_state*)*initial_state;
-    moro8_vm* vm = state->vm;
+    moro8_cpu* cpu = state->cpu;
 
     // Run
-    moro8_step(vm);
+    moro8_step(cpu);
 
     // Print output state
     char output[MORO8_PRINT_BUFFER_SIZE];
-    moro8_print(vm, output, MORO8_PRINT_BUFFER_SIZE);
+    moro8_print(cpu, output, MORO8_PRINT_BUFFER_SIZE);
     fs_assert_write_file(state->output, output, MORO8_PRINT_BUFFER_SIZE - 1);
 
     // Compare expected state
     size_t size = 0;
     const char* expected = (const char*)fs_assert_read_file(state->expected, &size);
-    moro8_vm* vm2 = moro8_assert_create();
+    moro8_cpu* vm2 = moro8_assert_create();
     vm2->memory = (moro8_bus*)moro8_array_memory_create();
     moro8_assert_parse(vm2, expected, size);
-    moro8_assert_equal(vm, vm2);
+    moro8_assert_equal(cpu, vm2);
     moro8_array_memory_delete((moro8_array_memory*)vm2->memory);
     moro8_delete(vm2);
 }
@@ -56,9 +56,9 @@ int setup(void** initial_state)
     buf = fs_assert_read_file(state->input, &size);
 
     // Parse test
-    state->vm = moro8_assert_create();
-    state->vm->memory = (moro8_bus*)moro8_array_memory_create();
-    assert_true(moro8_parse(state->vm, buf, size));
+    state->cpu = moro8_assert_create();
+    state->cpu->memory = (moro8_bus*)moro8_array_memory_create();
+    assert_true(moro8_parse(state->cpu, buf, size));
 
     return 0;
 }
@@ -67,9 +67,9 @@ int teardown(void** initial_state)
 {
     test_state* state = (test_state*)*initial_state;
 
-    // Delete vm
-    moro8_array_memory_delete((moro8_array_memory*)state->vm->memory);
-    moro8_delete(state->vm);
+    // Delete cpu
+    moro8_array_memory_delete((moro8_array_memory*)state->cpu->memory);
+    moro8_delete(state->cpu);
     free(state);
 
     return 0;

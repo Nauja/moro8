@@ -158,21 +158,3 @@ jobs:
         run: |
           cd build
           cmake --build . --target test ARGS="-V"
-  amd64_windows_vs2019:
-    runs-on: windows-2019
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: ilammy/msvc-dev-cmd@v1
-      - run: cl
-      - name: Build moro8
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. -G "Visual Studio 16 2019"
-          cmake --build .
-      - name: Test moro8
-        run: |
-          cd build
-          cmake --build . --target test ARGS="-V"

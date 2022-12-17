@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.3)
 # and find_package()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
+include(ExternalProject)
+
 set(MORO8_VERSION_MAJOR 0)
 set(MORO8_VERSION_MINOR 0)
 set(MORO8_VERSION_PATCH 1)
@@ -52,6 +54,20 @@ option(MORO8_DOXYGEN "Docs Enabled" OFF)
 option(MORO8_MINIMALIST "Strip some extra functions" OFF)
 option(MORO8_WITH_PARSER "Enable moro8_print and moro8_parse functions" ON)
 option(MORO8_WITH_HANDLERS "Enable support for custom opcode handlers" ON)
+option(MORO8_WITH_CLI "Build the command-line interface" ON)
+
+if (MORO8_MINIMALIST)
+set(MORO8_UNIT_TESTING OFF)
+set(MORO8_DOXYGEN OFF)
+set(MORO8_WITH_PARSER OFF)
+set(MORO8_WITH_HANDLERS OFF)
+set(MORO8_WITH_CLI OFF)
+endif(MORO8_MINIMALIST)
+
+if (MORO8_UNIT_TESTING OR MORO8_DOXYGEN OR MORO8_WITH_CLI)
+set(MORO8_WITH_PARSER ON)
+set(MORO8_WITH_HANDLERS ON)
+endif(MORO8_UNIT_TESTING OR MORO8_DOXYGEN OR MORO8_WITH_CLI)
 
 # disallow in-source build
 include(MacroEnsureOutOfSourceBuild)
@@ -72,7 +88,8 @@ add_library("${MORO8_LIB}" SHARED "${HEADERS}" "${SOURCES}")
 target_compile_options("${MORO8_LIB}"
                         PRIVATE
                             ${DEFAULT_C_COMPILE_FLAGS}
-                            -DHAVE_CONFIG_H)
+                            -DHAVE_CONFIG_H
+                            -DMORO8_WITH_CLI=Off)
                                
 target_include_directories(${MORO8_LIB}
                             PRIVATE
@@ -98,10 +115,67 @@ if (MORO8_STATIC)
                                    ${CMAKE_CURRENT_BINARY_DIR}
                                PUBLIC
                                     ${CMAKE_CURRENT_SOURCE_DIR})
+endif(MORO8_STATIC)
+
+if (MORO8_WITH_CLI OR MORO8_UNIT_TESTING)
+# libfs
+set(LIBFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/vendor/libfs")
+set(LIBFS_INCLUDE_DIR "${LIBFS_SOURCE_DIR}")
+set(LIBFS_BINARY_DIR "${LIBFS_SOURCE_DIR}/build")
+
+ExternalProject_Add(libfs
+  PREFIX libfs
+  SOURCE_DIR ${LIBFS_SOURCE_DIR}
+  BINARY_DIR ${LIBFS_BINARY_DIR}
+  INSTALL_COMMAND ""
+  CMAKE_ARGS
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DLIBFS_STATIC=On
+        -DLIBFS_UNIT_TESTING=Off
+        -DLIBFS_DOXYGEN=Off
+)
+
+add_library(libfs_vendor STATIC SHARED IMPORTED)
+
+if(MSVC)
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/${CMAKE_CFG_INTDIR}/libfs.lib")
+else()
+  set(LIBFS_LIBRARY "${LIBFS_BINARY_DIR}/libfs.a")
 endif()
 
+add_dependencies(libfs_vendor libfs)
+
+message("LIBFS_BINARY_DIR=${LIBFS_BINARY_DIR}")
+message("LIBFS_LIBRARY=${LIBFS_LIBRARY}")
+endif(MORO8_WITH_CLI OR MORO8_UNIT_TESTING)
+
+if (MORO8_WITH_CLI AND NOT MORO8_MINIMALIST)
+    
+    set(MORO8_CLI "moro8-cli")
+
+    add_executable(${MORO8_CLI} "cli.c")
+            
+    target_compile_options(${MORO8_CLI}
+                           PRIVATE
+                               ${DEFAULT_C_COMPILE_FLAGS}
+                               -DLIBFS_STATIC=On)
+
+    target_link_libraries(${MORO8_CLI} PRIVATE ${LIBFS_LIBRARY} ${MORO8_STATIC_LIB})
+
+    target_include_directories(${MORO8_CLI}
+        PRIVATE 
+            ${LIBFS_INCLUDE_DIR}
+            ${LIBFS_BINARY_DIR})
+
+    # Link libfs
+    add_dependencies(${MORO8_CLI} libfs)
+
+    set_target_properties(${MORO8_CLI} PROPERTIES RUNTIME_OUTPUT_NAME moro8)
+
+endif(MORO8_WITH_CLI AND NOT MORO8_MINIMALIST)
+
 # include cmocka
-if (MORO8_UNIT_TESTING AND NOT MORO8_MINIMALIST)
+if (MORO8_UNIT_TESTING)
     if (NOT MORO8_STATIC)
         message("Skip unit testing because MORO8_STATIC option is off")
 

@@ -32,34 +32,34 @@ This is how you can load a program to ROM and run it:
 ```c
 #include "moro8.h"
 
-// Initialize the vm
-struct moro8_vm vm;
-moro8_init(&vm);
+// Initialize the cpu
+struct moro8_cpu cpu;
+moro8_init(&cpu);
 
 // Initialize the memory
 struct moro8_array_memory memory;
 moro8_array_memory_init(&memory);
 
-// Link vm to memory
-moro8_set_memory_bus(&vm, &memory.bus);
+// Link cpu to memory
+moro8_set_memory_bus(&cpu, &memory.bus);
 
 // Load this small program to ROM and run
 moro8_uword prog[] = {
     0xA9, 0x02, // LDA #$02
     0x69, 0x03  // ADC #$03
 };
-moro8_load(&vm, prog, 4);
-moro8_run(&vm);
+moro8_load(&cpu, prog, 4);
+moro8_run(&cpu);
 
 // Print result in accumulator register
-printf("Result of 2 + 3 is %d", moro8_get_ac(&vm));
+printf("Result of 2 + 3 is %d", moro8_get_ac(&cpu));
 ```
 
-You can notice that we have two distinct objects, the vm itself, and the memory.
+You can notice that we have two distinct objects, the cpu itself, and the memory.
 But why is that so ?
 
-Well, while the vm has a maximum memory of 64KB that could have easily been hard coded, I chose to design the library
-so that the memory stays separated from the vm and can easily be implemented in different ways. This is to allow for different
+Well, while the cpu has a maximum memory of 64KB that could have easily been hard coded, I chose to design the library
+so that the memory stays separated from the cpu and can easily be implemented in different ways. This is to allow for different
 strategies such as some pagination system when running on a microcontroller with less than 64KB which is the case when
 running on Arduino.
 
@@ -123,6 +123,7 @@ You can change the build process with a list of different options that you can p
   * `-DMORO8_MINIMALIST=On`: Strip some extra functions. (off by default)
   * `-DMORO8_WITH_PARSER=On`: Enable moro8_print and moro8_parse functions. (on by default)
   * `-DMORO8_WITH_HANDLERS=On`: Enable support for custom opcode handlers. (on by default)
+  * `-DMORO8_WITH_CLI=On`: Enable building the command-line interface. (on by default)
 
 ## Build with Visual Studio
 
