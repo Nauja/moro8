@@ -102,7 +102,6 @@ static void run(const char *path, moro8_format format)
     moro8_set_memory_bus(&cpu, &memory.bus);
 
     // To initialize the cpu.
-    moro8_uword prog[] = {};
     moro8_load(&cpu, NULL, 0);
 
     // Load program to memory.
