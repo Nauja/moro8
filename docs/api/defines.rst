@@ -19,6 +19,8 @@ Defines
    defines/moro8_with_hooks.rst
    defines/moro8_malloc.rst
    defines/moro8_free.rst
+   defines/moro8_print_buffer_size.rst
+   defines/moro8_print_header_buffer_size.rst
    defines/moro8_memory_size.rst
    defines/moro8_page_size.rst
    defines/moro8_stack_offset.rst
