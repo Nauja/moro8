@@ -15,6 +15,7 @@ Defines
    defines/moro8_minor_version.rst
    defines/moro8_patch_version.rst
    defines/moro8_minimalist.rst
+   defines/moro8_extended_opcodes.rst
    defines/moro8_with_parser.rst
    defines/moro8_with_hooks.rst
    defines/moro8_malloc.rst
