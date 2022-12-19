@@ -54,6 +54,13 @@ extern "C"
 #cmakedefine MORO8_MINIMALIST 1
 #endif
 
+#ifndef MORO8_EXTENDED_OPCODES
+/**
+ * Includes extended opcodes specific to moro8.
+ */
+#cmakedefine MORO8_EXTENDED_OPCODES 1
+#endif
+
 #ifndef MORO8_WITH_PARSER
 /**
  * Builds moro8 with support for parser.
@@ -537,6 +544,18 @@ extern "C"
 		MORO8_OP_DEA = 0x3A,
 		MORO8_OP_INA = 0x1A,
 		MORO8_OP_JMP_ABS_X = 0x7C,
+#if MORO8_EXTENDED_OPCODES
+		MORO8_OP_LDA_SP = 0x02,
+		MORO8_OP_LDA_SP_X = 0x12,
+		MORO8_OP_LDX_SP = 0x22,
+		MORO8_OP_LDX_SP_Y = 0x32,
+		MORO8_OP_LDY_SP = 0x42,
+		MORO8_OP_LDY_SP_X = 0x52,
+		MORO8_OP_PHX = 0x62,
+		MORO8_OP_PHY = 0x72,
+		MORO8_OP_PLX = 0x82,
+		MORO8_OP_PLY = 0x92,
+#endif
 		// Number of opcodes
 		MORO8_OP_MAX
 	};

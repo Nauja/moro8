@@ -21,7 +21,7 @@ ExternalProject_Get_Property(cmocka source_dir binary_dir)
 add_library(cmocka_vendor STATIC SHARED IMPORTED)
 
 if(MSVC)
-  set(CMOCKA_LIBRARY "${CMOCKA_BINARY_DIR}/src/Release/cmocka-static.lib")
+  set(CMOCKA_LIBRARY "${CMOCKA_BINARY_DIR}/src/${CMAKE_CFG_INTDIR}/cmocka-static.lib")
 else()
   set(CMOCKA_LIBRARY "${CMOCKA_BINARY_DIR}/src/libcmocka-static.a")
 endif()
@@ -58,11 +58,8 @@ foreach(_TEST ${_TESTS})
             ${CMOCKA_BINARY_DIR}
             ${LIBFS_BINARY_DIR})
 
-    # Link cmocka
-    add_dependencies(moro8-${_TEST} cmocka)
-
-    # Link libfs
-    add_dependencies(moro8-${_TEST} libfs)
+    # Link cmocka and libfs
+    add_dependencies(moro8-${_TEST} cmocka libfs)
 
 endforeach()
 

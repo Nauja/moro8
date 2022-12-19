@@ -121,6 +121,7 @@ You can change the build process with a list of different options that you can p
   * `-DMORO8_UNIT_TESTING=On`: Enable building the tests. (on by default)
   * `-DMORO8_DOXYGEN=On`: Enable building the docs. (off by default)
   * `-DMORO8_MINIMALIST=On`: Strip some extra functions. (off by default)
+  * `-DMORO8_EXTENDED_OPCODES=On`: Enable extended opcodes specific to moro8. (on by default)
   * `-DMORO8_WITH_PARSER=On`: Enable moro8_print and moro8_parse functions. (on by default)
   * `-DMORO8_WITH_HANDLERS=On`: Enable support for custom opcode handlers. (on by default)
   * `-DMORO8_WITH_CLI=On`: Enable building the command-line interface. (on by default)
