@@ -32,3 +32,4 @@ Compare Memory and Index Y.
                 Immediate     CPY #$44      $C0  2   2
                 Zero Page     CPY $44       $C4  2   3
                 Absolute      CPY $4400     $CC  3   4
+                Stack         CPY stk,$44   $E2  2   -

@@ -555,6 +555,10 @@ extern "C"
 		MORO8_OP_PHY = 0x72,
 		MORO8_OP_PLX = 0x82,
 		MORO8_OP_PLY = 0x92,
+		MORO8_OP_CMP_SP = 0xB2,
+		MORO8_OP_CMP_SP_X = 0xC2,
+		MORO8_OP_CPX_SP = 0xD2,
+		MORO8_OP_CPY_SP = 0xE2,
 #endif
 		// Number of opcodes
 		MORO8_OP_MAX
