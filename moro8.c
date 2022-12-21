@@ -664,6 +664,14 @@ moro8_step(moro8_cpu *cpu)
     case MORO8_OP_CMP_IND_Y:
         _moro8_cmp_ac(cpu, MORO8_GET_MEM_IND_Y());
         break;
+#if MORO8_EXTENDED_OPCODES
+    case MORO8_OP_CMP_SP:
+        _moro8_cmp_ac(cpu, MORO8_GET_MEM_SP());
+        break;
+    case MORO8_OP_CMP_SP_X:
+        _moro8_cmp_ac(cpu, MORO8_GET_MEM_SP_X());
+        break;
+#endif
     case MORO8_OP_CPX_IMM:
         _moro8_cmp_x(cpu, operand);
         break;
@@ -673,6 +681,11 @@ moro8_step(moro8_cpu *cpu)
     case MORO8_OP_CPX_ABS:
         _moro8_cmp_x(cpu, MORO8_GET_MEM_ABS());
         break;
+#if MORO8_EXTENDED_OPCODES
+    case MORO8_OP_CPX_SP:
+        _moro8_cmp_x(cpu, MORO8_GET_MEM_SP());
+        break;
+#endif
     case MORO8_OP_CPY_IMM:
         _moro8_cmp_y(cpu, operand);
         break;
@@ -682,6 +695,11 @@ moro8_step(moro8_cpu *cpu)
     case MORO8_OP_CPY_ABS:
         _moro8_cmp_y(cpu, MORO8_GET_MEM_ABS());
         break;
+#if MORO8_EXTENDED_OPCODES
+    case MORO8_OP_CPY_SP:
+        _moro8_cmp_y(cpu, MORO8_GET_MEM_SP());
+        break;
+#endif
     case MORO8_OP_DEA:
         _moro8_dec_reg(cpu, &MORO8_AC);
         MORO8_DEC_PC;

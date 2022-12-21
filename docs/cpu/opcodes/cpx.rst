@@ -32,3 +32,4 @@ Compare Memory and Index X.
                 Immediate     CPX #$44      $E0  2   2
                 Zero Page     CPX $44       $E4  2   3
                 Absolute      CPX $4400     $EC  3   4
+                Stack         CPX stk,$44   $D2  2   -
