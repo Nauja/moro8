@@ -4,8 +4,6 @@
 moro8_set_memory
 ----------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

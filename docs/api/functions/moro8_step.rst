@@ -4,8 +4,6 @@
 moro8_step
 ----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

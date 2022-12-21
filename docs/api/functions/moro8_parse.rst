@@ -4,8 +4,6 @@
 moro8_parse
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

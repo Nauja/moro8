@@ -4,8 +4,6 @@
 moro8_load
 ----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

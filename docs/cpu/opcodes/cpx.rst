@@ -4,8 +4,6 @@
 CPX
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

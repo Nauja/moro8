@@ -4,8 +4,6 @@
 MORO8_EXTENDED_OPCODES
 ----------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

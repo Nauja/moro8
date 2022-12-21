@@ -4,8 +4,6 @@
 CLV
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

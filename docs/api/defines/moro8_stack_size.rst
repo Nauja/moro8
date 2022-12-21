@@ -4,8 +4,6 @@
 MORO8_STACK_SIZE
 ----------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

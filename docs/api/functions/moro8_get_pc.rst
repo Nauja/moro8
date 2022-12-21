@@ -4,8 +4,6 @@
 moro8_get_pc
 ------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

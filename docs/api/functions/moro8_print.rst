@@ -4,8 +4,6 @@
 moro8_print
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

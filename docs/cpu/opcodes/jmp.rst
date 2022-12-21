@@ -4,8 +4,6 @@
 JMP
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

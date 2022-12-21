@@ -4,8 +4,6 @@
 moro8_equal
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

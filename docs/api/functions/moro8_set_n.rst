@@ -4,8 +4,6 @@
 moro8_set_n
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

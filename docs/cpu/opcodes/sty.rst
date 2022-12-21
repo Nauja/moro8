@@ -4,8 +4,6 @@
 STY
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
       

@@ -4,8 +4,6 @@
 MORO8_ROM_SIZE
 --------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

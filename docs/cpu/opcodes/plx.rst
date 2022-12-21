@@ -4,8 +4,6 @@
 PLX
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
       

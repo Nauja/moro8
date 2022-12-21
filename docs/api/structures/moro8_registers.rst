@@ -4,8 +4,6 @@
 moro8_registers
 ---------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

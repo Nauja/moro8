@@ -4,8 +4,6 @@
 MORO8_PAGE_SIZE
 ---------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

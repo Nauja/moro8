@@ -4,8 +4,6 @@
 moro8_copy
 ----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

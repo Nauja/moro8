@@ -4,8 +4,6 @@
 moro8_get_memory_dword
 ----------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

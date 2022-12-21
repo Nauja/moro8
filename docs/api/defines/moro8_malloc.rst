@@ -4,8 +4,6 @@
 MORO8_MALLOC
 ------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

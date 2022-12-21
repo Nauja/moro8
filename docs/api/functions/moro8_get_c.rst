@@ -4,8 +4,6 @@
 moro8_get_c
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

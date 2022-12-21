@@ -4,8 +4,6 @@
 moro8_get_memory_bus
 --------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

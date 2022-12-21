@@ -4,8 +4,6 @@
 moro8_init_hooks
 ----------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

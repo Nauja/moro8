@@ -4,8 +4,6 @@
 MORO8_PRINT_BUFFER_SIZE
 -----------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

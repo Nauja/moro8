@@ -4,8 +4,6 @@
 moro8_set_pc
 ------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       
