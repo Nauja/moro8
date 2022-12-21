@@ -4,8 +4,6 @@
 PHY
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
       

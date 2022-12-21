@@ -4,8 +4,6 @@
 moro8_get_sp
 ------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

@@ -4,8 +4,6 @@
 moro8_get_y
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

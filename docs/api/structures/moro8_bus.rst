@@ -4,8 +4,6 @@
 moro8_bus
 ---------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

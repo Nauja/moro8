@@ -4,8 +4,6 @@
 BMI
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

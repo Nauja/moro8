@@ -4,8 +4,6 @@
 moro8_array_memory_create
 -------------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

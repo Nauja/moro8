@@ -4,8 +4,6 @@
 moro8_init
 ----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

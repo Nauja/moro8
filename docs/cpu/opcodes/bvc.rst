@@ -4,8 +4,6 @@
 BVC
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

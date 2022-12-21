@@ -4,8 +4,6 @@
 MORO8_STACK_OFFSET
 ------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

@@ -4,8 +4,6 @@
 moro8_cpu
 --------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

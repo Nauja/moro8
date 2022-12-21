@@ -4,8 +4,6 @@
 moro8_run
 ---------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

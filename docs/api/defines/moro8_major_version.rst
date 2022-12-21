@@ -4,8 +4,6 @@
 MORO8_VERSION_MAJOR
 -------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

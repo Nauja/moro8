@@ -4,8 +4,6 @@
 moro8_uword
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

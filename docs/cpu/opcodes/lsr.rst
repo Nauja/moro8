@@ -4,8 +4,6 @@
 LSR
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
       

@@ -4,8 +4,6 @@
 LDX
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

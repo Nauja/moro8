@@ -4,8 +4,6 @@
 moro8_create
 ------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

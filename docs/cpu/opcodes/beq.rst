@@ -4,8 +4,6 @@
 BEQ
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

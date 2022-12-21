@@ -4,8 +4,6 @@
 MORO8_VERSION_PATCH
 -------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

@@ -4,8 +4,6 @@
 MORO8_ROM_OFFSET
 ----------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

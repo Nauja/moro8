@@ -4,8 +4,6 @@
 moro8_delete
 ------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

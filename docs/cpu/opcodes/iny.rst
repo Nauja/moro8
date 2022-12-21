@@ -4,8 +4,6 @@
 INY
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
 

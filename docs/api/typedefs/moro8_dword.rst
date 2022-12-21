@@ -4,8 +4,6 @@
 moro8_dword
 -----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

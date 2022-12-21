@@ -4,8 +4,6 @@
 MORO8_WITH_HANDLERS
 -------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

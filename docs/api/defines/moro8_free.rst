@@ -4,8 +4,6 @@
 MORO8_FREE
 ----------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

@@ -52,8 +52,6 @@ Where:
 
 Now, for a full list of moro8 opcodes:
 
-.. module:: moro8
-
 .. toctree::
    :maxdepth: 1
    :glob:

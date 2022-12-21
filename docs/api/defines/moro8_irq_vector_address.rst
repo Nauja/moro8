@@ -4,8 +4,6 @@
 MORO8_IRQ_VECTOR_ADDRESS
 ------------------------
 
-.. module:: moro8
-
 .. contents::
    :local:
       

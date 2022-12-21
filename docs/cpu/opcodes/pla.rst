@@ -4,8 +4,6 @@
 PLA
 ---
 
-.. module:: moro8
-
 .. contents::
    :local:
       
