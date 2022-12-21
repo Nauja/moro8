@@ -1331,13 +1331,106 @@ moro8_print(const struct moro8_cpu *cpu, char *buf, size_t size)
     return MORO8_PRINT_BUFFER_SIZE - 1;
 }
 
-/** Parse a 0-9A-F character */
-static inline moro8_uword moro8_parse_hex(char value)
+#define MORO8_IS_HEX(c) ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+
+MORO8_PUBLIC(moro8_uword)
+moro8_parse_hex(char value)
 {
-    return (value >= '0' && value <= '9') ? (value - '0') : (value - 'A' + 10);
+    switch (value)
+    {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+        return value - '0';
+    case 'a':
+    case 'b':
+    case 'c':
+    case 'd':
+    case 'e':
+    case 'f':
+        return value - 'a' + 10;
+    case 'A':
+    case 'B':
+    case 'C':
+    case 'D':
+    case 'E':
+    case 'F':
+        return value - 'A' + 10;
+    default:
+        return 0;
+    }
 }
 
-#define MORO8_IS_HEX(c) ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'))
+MORO8_PUBLIC(size_t)
+moro8_parse_word(const char *buf, size_t size, moro8_uword *value)
+{
+    *value = 0;
+    char c;
+    size_t read = 0;
+    size_t col = 0;
+    for (size_t i = 0; i < size && col < 2; ++i)
+    {
+        c = *buf;
+        read++;
+        switch (c)
+        {
+        case '\0':
+            return 0;
+        case ' ':
+        case '\t':
+        case '\n':
+            break;
+        default:
+            if (!MORO8_IS_HEX(c))
+            {
+                return 0;
+            }
+
+            *value += moro8_parse_hex(c) << (((col + 1) % 2) * 4);
+            col++;
+            if (col == 2)
+            {
+                return read;
+            }
+            break;
+        }
+
+        buf++;
+    }
+
+    return 0;
+}
+
+MORO8_PUBLIC(size_t)
+moro8_parse_dword(const char *buf, size_t size, moro8_udword *value)
+{
+    *value = 0;
+    size_t read = 0;
+    size_t result;
+    moro8_uword word;
+    for (size_t i = 0; i < 2; ++i)
+    {
+        if ((result = moro8_parse_word(buf, size, &word)) == 0)
+        {
+            return 0;
+        }
+
+        read += result;
+        buf += result;
+        size -= result;
+        *value += ((moro8_udword)word) << (((i + 1) % 2) * 8);
+    }
+
+    return read;
+}
+
 /** Parse a HHLL hex string to double word */
 static inline int moro8_parse_address(const char *buf, moro8_udword *value)
 {
