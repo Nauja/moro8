@@ -16,16 +16,17 @@ typedef struct test_state
     char input[LIBFS_MAX_PATH];
     char expected[LIBFS_MAX_PATH];
     char output[LIBFS_MAX_PATH];
-    moro8_cpu* cpu;
+    moro8_cpu *cpu;
 } test_state;
 
 /**
  * Run a test from test_opcodes directory.
  * @param[in] state Initial state
  */
-void test_func(void** initial_state) {
-    const test_state* state = (const test_state*)*initial_state;
-    moro8_cpu* cpu = state->cpu;
+void test_func(void **initial_state)
+{
+    const test_state *state = (const test_state *)*initial_state;
+    moro8_cpu *cpu = state->cpu;
 
     // Run
     moro8_step(cpu);
@@ -37,45 +38,46 @@ void test_func(void** initial_state) {
 
     // Compare expected state
     size_t size = 0;
-    const char* expected = (const char*)fs_assert_read_file(state->expected, &size);
-    moro8_cpu* vm2 = moro8_assert_create();
-    vm2->memory = (moro8_bus*)moro8_array_memory_create();
+    const char *expected = (const char *)fs_assert_read_file(state->expected, &size);
+    moro8_cpu *vm2 = moro8_assert_create();
+    vm2->memory = (moro8_bus *)moro8_array_memory_create();
     moro8_assert_parse(vm2, expected, size);
     moro8_assert_equal(cpu, vm2);
-    moro8_array_memory_delete((moro8_array_memory*)vm2->memory);
+    moro8_array_memory_delete((moro8_array_memory *)vm2->memory);
     moro8_delete(vm2);
 }
 
-int setup(void** initial_state)
+int setup(void **initial_state)
 {
-    test_state* state = (test_state*)*initial_state;
+    test_state *state = (test_state *)*initial_state;
 
     // Read test
     size_t size = 0;
-    void* buf = NULL;
+    void *buf = NULL;
     buf = fs_assert_read_file(state->input, &size);
 
     // Parse test
     state->cpu = moro8_assert_create();
-    state->cpu->memory = (moro8_bus*)moro8_array_memory_create();
+    state->cpu->memory = (moro8_bus *)moro8_array_memory_create();
     assert_true(moro8_parse(state->cpu, buf, size));
 
     return 0;
 }
 
-int teardown(void** initial_state)
+int teardown(void **initial_state)
 {
-    test_state* state = (test_state*)*initial_state;
+    test_state *state = (test_state *)*initial_state;
 
     // Delete cpu
-    moro8_array_memory_delete((moro8_array_memory*)state->cpu->memory);
+    moro8_array_memory_delete((moro8_array_memory *)state->cpu->memory);
     moro8_delete(state->cpu);
     free(state);
 
     return 0;
 }
 
-int main(void) {
+int main(void)
+{
     CMUnitTest tests[MORO8_NUM_TESTS];
     memset(tests, 0, sizeof(CMUnitTest) * MORO8_NUM_TESTS);
 
@@ -93,13 +95,13 @@ int main(void) {
     fs_assert_make_dir(output_dir);
 
     // Iterate directory
-    fs_directory_iterator* it = fs_assert_open_dir(input_dir);
+    fs_directory_iterator *it = fs_assert_open_dir(input_dir);
 
-    struct CMUnitTest* test = NULL;
+    struct CMUnitTest *test = NULL;
     size_t test_index = 0;
 
     // Load all tests
-    while(fs_read_dir(it))
+    while (fs_read_dir(it))
     {
         if (!fs_string_ends_with(it->path, ".txt"))
         {
@@ -107,17 +109,17 @@ int main(void) {
         }
 
         // Setup initial state
-        test_state* state = (test_state*)malloc(sizeof(test_state));
+        test_state *state = (test_state *)malloc(sizeof(test_state));
         fs_assert_join_path(&state->input, input_dir, it->path);
         fs_assert_join_path(&state->expected, expected_dir, it->path);
         fs_assert_join_path(&state->output, output_dir, it->path);
 
         // Setup test
         test = &tests[test_index];
-        test->name = (char*)malloc(strlen(it->path));
-        strcpy((char*)test->name, it->path);
+        test->name = (char *)malloc(strlen(it->path));
+        strcpy((char *)test->name, it->path);
         test->test_func = test_func;
-        test->initial_state = (void*)state;
+        test->initial_state = (void *)state;
         test->setup_func = setup;
         test->teardown_func = teardown;
 

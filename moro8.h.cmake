@@ -809,6 +809,46 @@ extern "C"
 #if MORO8_WITH_PARSER
 
 	/**
+	 * Parses a single [0-9A-F] character.
+	 *
+	 * @note
+	 * Available only if built with MORO8_WITH_PARSER=1
+	 *
+	 * @param[in] value Character
+	 * @return Corresponding value.
+	 */
+	MORO8_PUBLIC(moro8_uword)
+	moro8_parse_hex(char value);
+
+	/**
+	 * Parses the next hexadecimal word.
+	 *
+	 * @note
+	 * Available only if built with MORO8_WITH_PARSER=1
+	 *
+	 * @param[in] buf Some buffer
+	 * @param[in] size Buffer size including the null-terminating character
+	 * @param[out] value Parsed word
+	 * @return Read characters or zero.
+	 */
+	MORO8_PUBLIC(size_t)
+	moro8_parse_word(const char* buf, size_t size, moro8_uword* value);
+
+	/**
+	 * Parses the next hexadecimal double word.
+	 *
+	 * @note
+	 * Available only if built with MORO8_WITH_PARSER=1
+	 *
+	 * @param[in] buf Some buffer
+	 * @param[in] size Buffer size including the null-terminating character
+	 * @param[out] value Parsed double word
+	 * @return Read characters or zero.
+	 */
+	MORO8_PUBLIC(size_t)
+	moro8_parse_dword(const char* buf, size_t size, moro8_udword* value);
+
+	/**
 	 * Dumps the current cpu state to an human-readable string.
 	 *
 	 * This works like snprintf for the cpu.
