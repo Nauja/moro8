@@ -1201,8 +1201,23 @@ moro8_get_memory_bus(moro8_cpu *cpu)
 
 #if MORO8_WITH_PARSER
 
+#define MORO8_SNPRINTF(buf, size, written, format, ...)        \
+    size_t total = snprintf(*buf, *size, format, __VA_ARGS__); \
+                                                               \
+    if (total > *size)                                         \
+    {                                                          \
+        *size = 0;                                             \
+    }                                                          \
+    else                                                       \
+    {                                                          \
+        *size -= total;                                        \
+    }                                                          \
+                                                               \
+    *written += total;                                         \
+    *buf += total;
+
 /** Print a single 0-15 value as a single hex character */
-static inline void moro8_print_hex(char value, char **buf, size_t *size)
+static void moro8_print_hex(char value, char **buf, size_t *size, size_t *written)
 {
     if (*size >= 1)
     {
@@ -1210,72 +1225,47 @@ static inline void moro8_print_hex(char value, char **buf, size_t *size)
         *buf[0] = (char)((value >= 0 && value <= 9) ? ('0' + value) : ('A' + (value - 10)));
     }
 
+    (*written)++;
     (*buf)++;
 }
 
 /** Print a single word as 00 */
-static inline void moro8_print_word(moro8_uword value, char **buf, size_t *size)
+static void moro8_print_word(moro8_uword value, char **buf, size_t *size, size_t *written)
 {
-    moro8_print_hex((value & 0xF0) >> 4, buf, size);
-    moro8_print_hex(value & 0xF, buf, size);
+    MORO8_SNPRINTF(buf, size, written, "%02X", value);
 }
 
-static inline void moro8_print_char(char value, char **buf, size_t *size)
+static void moro8_print_char(char value, char **buf, size_t *size, size_t *written)
 {
-    if (*size >= 1)
-    {
-        (*size)--;
-        *buf[0] = value;
-    }
-
-    (*buf)++;
+    MORO8_SNPRINTF(buf, size, written, "%c", value);
 }
 
-static inline void moro8_print_string(const char *value, char **buf, size_t *size)
+static void moro8_print_string(const char *value, char **buf, size_t *size, size_t *written)
 {
-    size_t written = snprintf(*buf, *size, "%s", value);
-
-    if (written > *size)
-    {
-        *size = 0;
-    }
-    else
-    {
-        *size -= written;
-    }
-
-    *buf += written;
+    MORO8_SNPRINTF(buf, size, written, "%s", value);
 }
 
 /** Print a double word as LL HH */
-static inline void moro8_print_dword(moro8_udword value, char **buf, size_t *size)
+static void moro8_print_dword(moro8_udword value, char **buf, size_t *size, size_t *written)
 {
-    moro8_print_word((moro8_uword)MORO8_LOW(value), buf, size);
-    moro8_print_char(' ', buf, size);
-    moro8_print_word((moro8_uword)MORO8_HIGH(value), buf, size);
+    MORO8_SNPRINTF(buf, size, written, "%02X %02X", (moro8_uword)MORO8_LOW(value), (moro8_uword)MORO8_HIGH(value));
 }
 
 /** Print REG: 00\n */
-static inline void moro8_print_register_word(const char *name, moro8_uword value, char **buf, size_t *size)
+static void moro8_print_register_word(const char *name, moro8_uword value, char **buf, size_t *size, size_t *written)
 {
-    moro8_print_string(name, buf, size);
-    moro8_print_char(' ', buf, size);
-    moro8_print_word(value, buf, size);
-    moro8_print_char('\n', buf, size);
+    MORO8_SNPRINTF(buf, size, written, "%s %02X\n", name, value);
 }
 
 /** Print REG: LL HH\n */
-static inline void moro8_print_register_dword(const char *name, moro8_udword value, char **buf, size_t *size)
+static void moro8_print_register_dword(const char *name, moro8_udword value, char **buf, size_t *size, size_t *written)
 {
 
-    moro8_print_string(name, buf, size);
-    moro8_print_char(' ', buf, size);
-    moro8_print_dword(value, buf, size);
-    moro8_print_char('\n', buf, size);
+    MORO8_SNPRINTF(buf, size, written, "%s %02X %02X\n", name, (moro8_uword)MORO8_LOW(value), (moro8_uword)MORO8_HIGH(value));
 }
 
 /** Print the whole memory as 0000: 00 00 00 00 ... 00 00 00 00 */
-static inline void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *size)
+static void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *size, size_t *written)
 {
     if (!cpu->memory)
     {
@@ -1287,25 +1277,25 @@ static inline void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *
     {
         if (i > 0)
         {
-            moro8_print_char('\n', buf, size);
+            moro8_print_char('\n', buf, size, written);
         }
 
-        moro8_print_word((moro8_uword)MORO8_HIGH(i), buf, size);
-        moro8_print_word((moro8_uword)MORO8_LOW(i), buf, size);
-        moro8_print_char(':', buf, size);
-        moro8_print_char(' ', buf, size);
+        moro8_print_word((moro8_uword)MORO8_HIGH(i), buf, size, written);
+        moro8_print_word((moro8_uword)MORO8_LOW(i), buf, size, written);
+        moro8_print_char(':', buf, size, written);
+        moro8_print_char(' ', buf, size, written);
 
         for (moro8_uword j = 0; j <= 0xF; ++j)
         {
             if (j > 0)
             {
-                moro8_print_char(' ', buf, size);
+                moro8_print_char(' ', buf, size, written);
                 if ((j % 4) == 0)
                 {
-                    moro8_print_char(' ', buf, size);
+                    moro8_print_char(' ', buf, size, written);
                 }
             }
-            moro8_print_word(MORO8_GET_MEM(address++), buf, size);
+            moro8_print_word(MORO8_GET_MEM(address++), buf, size, written);
         }
     }
 }
@@ -1313,22 +1303,38 @@ static inline void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *
 MORO8_PUBLIC(size_t)
 moro8_print(const struct moro8_cpu *cpu, char *buf, size_t size)
 {
+    if (!buf || size < 1)
+    {
+        return -1;
+    }
+
+    char *init_buf = buf;
+    size_t init_size = size;
+    size_t written = 0;
+    size_t *written_ptr = &written;
     char **buf_ptr = &buf;
     size_t *size_ptr = &size;
-    moro8_print_register_dword("PC:", cpu->registers.pc, buf_ptr, size_ptr);
-    moro8_print_register_word("AC:", cpu->registers.ac, buf_ptr, size_ptr);
-    moro8_print_register_word("X: ", cpu->registers.x, buf_ptr, size_ptr);
-    moro8_print_register_word("Y: ", cpu->registers.y, buf_ptr, size_ptr);
-    moro8_print_register_word("SP:", cpu->registers.sp, buf_ptr, size_ptr);
-    moro8_print_register_word("N: ", cpu->registers.sr.n, buf_ptr, size_ptr);
-    moro8_print_register_word("V: ", cpu->registers.sr.v, buf_ptr, size_ptr);
-    moro8_print_register_word("Z: ", cpu->registers.sr.z, buf_ptr, size_ptr);
-    moro8_print_register_word("C: ", cpu->registers.sr.c, buf_ptr, size_ptr);
-    moro8_print_char('\n', buf_ptr, size_ptr);
-    moro8_print_memory(cpu, buf_ptr, size_ptr);
-    moro8_print_char('\0', buf_ptr, size_ptr);
+    moro8_print_register_dword("PC:", cpu->registers.pc, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("AC:", cpu->registers.ac, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("X: ", cpu->registers.x, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("Y: ", cpu->registers.y, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("SP:", cpu->registers.sp, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("N: ", cpu->registers.sr.n, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("V: ", cpu->registers.sr.v, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("Z: ", cpu->registers.sr.z, buf_ptr, size_ptr, written_ptr);
+    moro8_print_register_word("C: ", cpu->registers.sr.c, buf_ptr, size_ptr, written_ptr);
+    moro8_print_char('\n', buf_ptr, size_ptr, written_ptr);
+    moro8_print_memory(cpu, buf_ptr, size_ptr, written_ptr);
 
-    return MORO8_PRINT_BUFFER_SIZE - 1;
+    // Same as snprintf
+    if (written < init_size)
+    {
+        init_buf[written] = '\0';
+        return written + 1;
+    }
+
+    init_buf[init_size - 1] = '\0';
+    return written;
 }
 
 #define MORO8_IS_HEX(c) ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))

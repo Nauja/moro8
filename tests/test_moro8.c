@@ -182,7 +182,7 @@ static void test_parse(void **state)
 
     // Print vm1 state and write to test_print.txt
     char dump[MORO8_PRINT_BUFFER_SIZE];
-    assert_int_equal(moro8_print(vm1, dump, MORO8_PRINT_BUFFER_SIZE), MORO8_PRINT_BUFFER_SIZE - 1);
+    assert_int_equal(moro8_print(vm1, dump, MORO8_PRINT_BUFFER_SIZE), MORO8_PRINT_BUFFER_SIZE);
     assert_true(dump[MORO8_PRINT_BUFFER_SIZE - 1] == '\0');
     assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE - 1)); // MORO8_PRINT_BUFFER_SIZE count the null-terminating character
 
@@ -198,7 +198,9 @@ static void test_parse(void **state)
     free(content);
 
     // Print vm2 state and write to test_print2.txt
-    assert_int_equal(moro8_print(vm2, dump, MORO8_PRINT_BUFFER_SIZE), MORO8_PRINT_BUFFER_SIZE - 1);
+    // Like snprintf, the number of written bytes should include
+    // the null-terminating character because buffer is large enough
+    assert_int_equal(moro8_print(vm2, dump, MORO8_PRINT_BUFFER_SIZE), MORO8_PRINT_BUFFER_SIZE);
     assert_true(dump[MORO8_PRINT_BUFFER_SIZE - 1] == '\0');
     fs_assert_join_path(&buf, output_dir, "test_print2.txt");
     assert_true(fs_write_file(buf, dump, MORO8_PRINT_BUFFER_SIZE - 1)); // MORO8_PRINT_BUFFER_SIZE count the null-terminating character
@@ -208,6 +210,23 @@ static void test_parse(void **state)
 
     moro8_array_memory_delete((moro8_array_memory *)vm2->memory);
     moro8_delete(vm2);
+}
+
+/** Test printing a cpu state to a too small buffer. */
+static void test_print_small_buffer(void **state)
+{
+    moro8_cpu *vm1 = *state;
+
+    char output_dir[LIBFS_MAX_PATH];
+    moro8_assert_output_dir(&output_dir);
+
+    char buf[LIBFS_MAX_PATH];
+    fs_assert_join_path(&buf, output_dir, "test_print.txt");
+    // Like snprintf, the number of written bytes should exclude
+    // the null-terminating character because buffer is too small
+    char dump[10];
+    assert_int_equal(moro8_print(vm1, dump, 10), MORO8_PRINT_BUFFER_SIZE - 1);
+    assert_true(dump[9] == '\0');
 }
 
 /** Test the special status register. */
@@ -246,6 +265,7 @@ int main(void)
         cmocka_unit_test_setup_teardown(test_set_memory_dword, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_set_memory_dword_oom, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_parse, moro8_setup_vm, moro8_delete_vm),
+        cmocka_unit_test_setup_teardown(test_print_small_buffer, moro8_setup_vm, moro8_delete_vm),
         cmocka_unit_test_setup_teardown(test_sr, moro8_setup_vm, moro8_delete_vm)};
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
