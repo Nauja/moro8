@@ -81,8 +81,12 @@ static void load_binary(moro8_cpu *cpu, fs_file_iterator *it)
 
 static void run(const char *path, moro8_format format)
 {
-    fs_file_iterator *it = fs_iter_file(path);
-    if (!it)
+    moro8_cpu cpu;
+    moro8_array_memory memory;
+    char output[MORO8_PRINT_HEADER_BUFFER_SIZE];
+    fs_file_iterator *it;
+
+    if (!(it = fs_iter_file(path)))
     {
         fprintf(stderr, "file not found %s\n", path);
         return;
@@ -90,21 +94,19 @@ static void run(const char *path, moro8_format format)
 
     printf("running %s...\n", path);
 
-    // Initialize the cpu
-    moro8_cpu cpu;
+    /* Initialize the cpu */
     moro8_init(&cpu);
 
-    // Initialize the memory
-    moro8_array_memory memory;
+    /* Initialize the memory */
     moro8_array_memory_init(&memory);
 
-    // Link cpu to memory
+    /* Link cpu to memory */
     moro8_set_memory_bus(&cpu, &memory.bus);
 
-    // To initialize the cpu.
+    /* To initialize the cpu */
     moro8_load(&cpu, NULL, 0);
 
-    // Load program to memory.
+    /* Load program to memory */
     switch (format)
     {
     case MORO8_FORMAT_BINARY:
@@ -122,16 +124,15 @@ static void run(const char *path, moro8_format format)
     }
     fs_close_file(it);
 
-    // Run the program.
+    /* Run the program */
     moro8_run(&cpu);
 
-    // Print memory
-    char output[MORO8_PRINT_HEADER_BUFFER_SIZE];
+    /* Print memory */
     moro8_print(&cpu, output, MORO8_PRINT_HEADER_BUFFER_SIZE);
     printf("\n%.*s\n\n", MORO8_PRINT_HEADER_BUFFER_SIZE, output);
 }
 
-static int print_help()
+static int print_help(void)
 {
     fprintf(stderr, "usage: moro8 [-h] [-f FORMAT] [target [target ...]]\n\
 \n\
@@ -150,8 +151,9 @@ int main(int argc, char *argv[])
     moro8_format format = MORO8_FORMAT_BINARY;
     int last_arg = 0;
     int index_pos = 0;
+    int i;
 
-    for (int i = argc - 1; i >= 0; --i)
+    for (i = argc - 1; i >= 0; --i)
     {
         if (argv[i][0] == '-')
         {

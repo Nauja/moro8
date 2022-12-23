@@ -8,6 +8,14 @@
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
+
+#if HAVE_STDARG_H
+#include <stdarg.h>
+#endif
+
+#ifndef vsnprintf
+int vsnprintf(char *str, size_t size, const char *format, va_list arg);
+#endif
 #endif
 
 #ifdef HAVE_STRING_H
@@ -77,7 +85,7 @@ moro8_init_hooks(struct moro8_hooks *hooks)
 typedef struct moro8_array_memory moro8_array_memory;
 
 MORO8_PUBLIC(moro8_array_memory *)
-moro8_array_memory_create()
+moro8_array_memory_create(void)
 {
     moro8_array_memory *memory = (moro8_array_memory *)_MORO8_MALLOC(sizeof(moro8_array_memory));
     moro8_array_memory_init(memory);
@@ -171,7 +179,7 @@ moro8_array_memory_delete(moro8_array_memory *memory)
 #endif
 
 MORO8_PUBLIC(moro8_cpu *)
-moro8_create()
+moro8_create(void)
 {
     moro8_cpu *cpu = (moro8_cpu *)_MORO8_MALLOC(sizeof(moro8_cpu));
     moro8_init(cpu);
@@ -180,13 +188,13 @@ moro8_create()
 
 static void _moro8_reset(moro8_cpu *cpu)
 {
-    // Reset registers to 0
+    /* Reset registers to 0 */
     memset(&cpu->registers, 0, sizeof(moro8_registers));
 
-    // Reset stack pointer to 0xFF
+    /* Reset stack pointer to 0xFF */
     cpu->registers.sp = MORO8_STACK_SIZE - 1;
 
-    // Also reset memory to 0
+    /* Also reset memory to 0 */
     if (cpu->memory)
     {
         cpu->memory->reset(cpu->memory);
@@ -207,27 +215,16 @@ moro8_delete(moro8_cpu *cpu)
     _MORO8_FREE(cpu);
 }
 
-MORO8_PUBLIC(const void *)
-moro8_as_buffer(const moro8_cpu *cpu, size_t *size)
-{
-    return NULL;
-}
-
-MORO8_PUBLIC(void)
-moro8_from_buffer(moro8_cpu *cpu, const void *buf, size_t size)
-{
-}
-
 MORO8_PUBLIC(void)
 moro8_load(moro8_cpu *cpu, const moro8_uword *prog, moro8_udword size)
 {
-    // Reset registers and memory
+    /* Reset registers and memory */
     _moro8_reset(cpu);
 
-    // Load program to ROM
+    /* Load program to ROM */
     moro8_set_memory(cpu, prog, MORO8_ROM_OFFSET, size);
 
-    // Set program counter to ROM
+    /* Set program counter to ROM */
     cpu->registers.pc = MORO8_ROM_OFFSET;
 }
 
@@ -241,15 +238,14 @@ moro8_resume(moro8_cpu *cpu)
 
 /** Get a double word operand */
 #define MORO8_DWORD_OPERAND (operand + (MORO8_GET_MEM(++cpu->registers.pc) << 8))
-/** Get a double word at a memory address */
-#define _MORO8_MEMORY_DWORD_CHECKED(addr) ((moro8_udword)MORO8_GET_MEM(addr) + ((addr < _MORO8_MAX_ADDR) ? (((moro8_udword)MORO8_GET_MEM(addr + 1)) << 8) : 0))
-#define MORO8_MEMORY_DWORD(addr) _MORO8_MEMORY_DWORD_CHECKED(((moro8_udword)addr))
-#define MORO8_MEMORY_SET_DWORD(addr, value)         \
-    MORO8_SET_MEM(addr, MORO8_LOW(value));          \
-    if (addr < _MORO8_MAX_ADDR)                     \
-    {                                               \
-        MORO8_SET_MEM(addr + 1, MORO8_HIGH(value)); \
-    }
+/** Get a double word at a memory address checking for the upper bound */
+static moro8_udword _moro8_get_memory_dword_checked(moro8_cpu *cpu, moro8_udword addr)
+{
+    return ((moro8_udword)MORO8_GET_MEM(addr) + ((addr < _MORO8_MAX_ADDR) ? (((moro8_udword)MORO8_GET_MEM(addr + 1)) << 8) : 0));
+}
+
+#define MORO8_MEMORY_DWORD(addr) _moro8_get_memory_dword_checked(cpu, (moro8_udword)addr)
+
 #define MORO8_DEC_PC --cpu->registers.pc
 #define MORO8_TWO_COMPLEMENT(value) (~result + 1)
 /** Build address depending on addressing mode. */
@@ -311,7 +307,7 @@ moro8_resume(moro8_cpu *cpu)
  * @param[in] cpu Some cpu
  * @param[in] operand Instruction operand
  */
-static inline void _moro8_adc(moro8_cpu *cpu, moro8_uword operand)
+static void _moro8_adc(moro8_cpu *cpu, moro8_uword operand)
 {
     moro8_uword sign_bit = MORO8_SIGN(MORO8_AC) == MORO8_SIGN(operand);
     moro8_udword result = MORO8_AC + operand + MORO8_C;
@@ -325,7 +321,7 @@ static inline void _moro8_adc(moro8_cpu *cpu, moro8_uword operand)
  * @param[in] cpu Some cpu
  * @param[in] operand Instruction operand
  */
-static inline void _moro8_bit(moro8_cpu *cpu, moro8_uword operand)
+static void _moro8_bit(moro8_cpu *cpu, moro8_uword operand)
 {
     MORO8_N = MORO8_IS_NEGATIVE(operand);
     MORO8_V = (operand & 0x70) != 0;
@@ -350,7 +346,7 @@ static inline void _moro8_bit(moro8_cpu *cpu, moro8_uword operand)
  * @param[in] left Value to compare
  * @param[in] right Value to compare
  */
-static inline void _moro8_cmp(moro8_cpu *cpu, moro8_uword left, moro8_uword right)
+static void _moro8_cmp(moro8_cpu *cpu, moro8_uword left, moro8_uword right)
 {
     MORO8_N = left < right;
     MORO8_Z = left == right;
@@ -366,7 +362,7 @@ static inline void _moro8_cmp(moro8_cpu *cpu, moro8_uword left, moro8_uword righ
  * @param[in] cpu Some cpu
  * @param[in] address Memory address
  */
-static inline void _moro8_dec(moro8_cpu *cpu, moro8_udword address)
+static void _moro8_dec(moro8_cpu *cpu, moro8_udword address)
 {
     moro8_uword value = MORO8_GET_MEM(address);
     value--;
@@ -380,7 +376,7 @@ static inline void _moro8_dec(moro8_cpu *cpu, moro8_udword address)
  * @param[in] cpu Some cpu
  * @param[in] reg Pointer to a register
  */
-static inline void _moro8_dec_reg(moro8_cpu *cpu, moro8_uword *reg)
+static void _moro8_dec_reg(moro8_cpu *cpu, moro8_uword *reg)
 {
     (*reg)--;
     MORO8_N = MORO8_IS_NEGATIVE(*reg);
@@ -392,7 +388,7 @@ static inline void _moro8_dec_reg(moro8_cpu *cpu, moro8_uword *reg)
  * @param[in] cpu Some cpu
  * @param[in] address Memory address
  */
-static inline void _moro8_inc(moro8_cpu *cpu, moro8_udword address)
+static void _moro8_inc(moro8_cpu *cpu, moro8_udword address)
 {
     moro8_uword value = MORO8_GET_MEM(address);
     value++;
@@ -406,7 +402,7 @@ static inline void _moro8_inc(moro8_cpu *cpu, moro8_udword address)
  * @param[in] cpu Some cpu
  * @param[in] reg Pointer to a register
  */
-static inline void _moro8_inc_reg(moro8_cpu *cpu, moro8_uword *reg)
+static void _moro8_inc_reg(moro8_cpu *cpu, moro8_uword *reg)
 {
     (*reg)++;
     MORO8_N = MORO8_IS_NEGATIVE(*reg);
@@ -418,7 +414,7 @@ static inline void _moro8_inc_reg(moro8_cpu *cpu, moro8_uword *reg)
  * @param[in] cpu Some cpu
  * @param[in] lb Lower byte (0 for ASL, C for ROL)
  */
-static inline void _moro8_rol_ac(moro8_cpu *cpu, moro8_uword lb)
+static void _moro8_rol_ac(moro8_cpu *cpu, moro8_uword lb)
 {
     MORO8_C = MORO8_IS_NEGATIVE(MORO8_AC);
     MORO8_AC = ((MORO8_AC & 0x7F) << 1) + lb;
@@ -432,7 +428,7 @@ static inline void _moro8_rol_ac(moro8_cpu *cpu, moro8_uword lb)
  * @param[in] address Memory address
  * @param[in] lb Lower byte (0 for ASL, C for ROL)
  */
-static inline void _moro8_rol(moro8_cpu *cpu, moro8_udword address, moro8_uword lb)
+static void _moro8_rol(moro8_cpu *cpu, moro8_udword address, moro8_uword lb)
 {
     moro8_uword value = MORO8_GET_MEM(address);
     MORO8_C = MORO8_IS_NEGATIVE(value);
@@ -447,7 +443,7 @@ static inline void _moro8_rol(moro8_cpu *cpu, moro8_udword address, moro8_uword 
  * @param[in] cpu Some cpu
  * @param[in] hb Higher byte (0 for LSR, C for ROR)
  */
-static inline void _moro8_ror_ac(moro8_cpu *cpu, moro8_uword hb)
+static void _moro8_ror_ac(moro8_cpu *cpu, moro8_uword hb)
 {
     MORO8_C = MORO8_AC & 0x1;
     MORO8_N = hb != 0;
@@ -461,7 +457,7 @@ static inline void _moro8_ror_ac(moro8_cpu *cpu, moro8_uword hb)
  * @param[in] address Memory address
  * @param[in] hb Higher byte (0 for LSR, C for ROR)
  */
-static inline void _moro8_ror(moro8_cpu *cpu, moro8_udword address, moro8_uword hb)
+static void _moro8_ror(moro8_cpu *cpu, moro8_udword address, moro8_uword hb)
 {
     moro8_uword value = MORO8_GET_MEM(address);
     MORO8_C = value & 0x1;
@@ -477,7 +473,7 @@ static inline void _moro8_ror(moro8_cpu *cpu, moro8_udword address, moro8_uword 
  * @param[in] value Some value
  * @return If it worked
  */
-static inline int _moro8_push_stack(moro8_cpu *cpu, moro8_uword value)
+static int _moro8_push_stack(moro8_cpu *cpu, moro8_uword value)
 {
     if (cpu->registers.sp == 0)
     {
@@ -494,7 +490,7 @@ static inline int _moro8_push_stack(moro8_cpu *cpu, moro8_uword value)
  * @param[in] cpu Some cpu
  * @return Popped value
  */
-static inline moro8_uword _moro8_pop_stack(moro8_cpu *cpu)
+static moro8_uword _moro8_pop_stack(moro8_cpu *cpu)
 {
     if (cpu->registers.sp == 0xFF)
     {
@@ -519,17 +515,18 @@ static inline moro8_uword _moro8_pop_stack(moro8_cpu *cpu)
 MORO8_PUBLIC(size_t)
 moro8_step(moro8_cpu *cpu)
 {
-    moro8_uword instruction = MORO8_GET_MEM(cpu->registers.pc);
+    moro8_uword operand, instruction;
+    moro8_udword doperand;
+    instruction = MORO8_GET_MEM(cpu->registers.pc);
+    operand = MORO8_GET_MEM(++cpu->registers.pc);
 
 #if MORO8_WITH_HANDLERS
-    // Lets custom handlers handle the instruction
+    /* Lets custom handlers handle the instruction */
     if (cpu->handlers[instruction] && cpu->handlers[instruction](cpu, instruction))
     {
         return MORO8_TRUE;
     }
 #endif
-
-    moro8_uword operand = MORO8_GET_MEM(++cpu->registers.pc);
 
     if (instruction == 0)
     {
@@ -773,10 +770,12 @@ moro8_step(moro8_cpu *cpu)
         MORO8_DEC_PC;
         break;
     case MORO8_OP_JMP_ABS:
-        cpu->registers.pc = MORO8_DWORD_OPERAND - 1;
+        doperand = MORO8_DWORD_OPERAND;
+        cpu->registers.pc = doperand - 1;
         break;
     case MORO8_OP_JMP_ABS_X:
-        cpu->registers.pc = (MORO8_DWORD_OPERAND + MORO8_X) - 1;
+        doperand = MORO8_DWORD_OPERAND + MORO8_X;
+        cpu->registers.pc = doperand - 1;
         break;
     case MORO8_OP_JMP_IND:
     {
@@ -1200,80 +1199,63 @@ moro8_get_memory_bus(moro8_cpu *cpu)
 }
 
 #if MORO8_WITH_PARSER
-
-#define MORO8_SNPRINTF(buf, size, written, format, ...)        \
-    size_t total = snprintf(*buf, *size, format, __VA_ARGS__); \
-                                                               \
-    if (total > *size)                                         \
-    {                                                          \
-        *size = 0;                                             \
-    }                                                          \
-    else                                                       \
-    {                                                          \
-        *size -= total;                                        \
-    }                                                          \
-                                                               \
-    *written += total;                                         \
-    *buf += total;
-
-/** Print a single 0-15 value as a single hex character */
-static void moro8_print_hex(char value, char **buf, size_t *size, size_t *written)
+static void moro8_snprintf(char **buf, size_t *size, size_t *written, const char *format, ...)
 {
-    if (*size >= 1)
+    size_t total;
+
+    va_list args;
+    va_start(args, format);
+    total = vsnprintf(*buf, *size, format, args);
+    va_end(args);
+
+    if (total > *size)
     {
-        (*size)--;
-        *buf[0] = (char)((value >= 0 && value <= 9) ? ('0' + value) : ('A' + (value - 10)));
+        *size = 0;
+    }
+    else
+    {
+        *size -= total;
     }
 
-    (*written)++;
-    (*buf)++;
+    *written += total;
+    *buf += total;
 }
 
 /** Print a single word as 00 */
 static void moro8_print_word(moro8_uword value, char **buf, size_t *size, size_t *written)
 {
-    MORO8_SNPRINTF(buf, size, written, "%02X", value);
+    moro8_snprintf(buf, size, written, "%02X", value);
 }
 
 static void moro8_print_char(char value, char **buf, size_t *size, size_t *written)
 {
-    MORO8_SNPRINTF(buf, size, written, "%c", value);
-}
-
-static void moro8_print_string(const char *value, char **buf, size_t *size, size_t *written)
-{
-    MORO8_SNPRINTF(buf, size, written, "%s", value);
-}
-
-/** Print a double word as LL HH */
-static void moro8_print_dword(moro8_udword value, char **buf, size_t *size, size_t *written)
-{
-    MORO8_SNPRINTF(buf, size, written, "%02X %02X", (moro8_uword)MORO8_LOW(value), (moro8_uword)MORO8_HIGH(value));
+    moro8_snprintf(buf, size, written, "%c", value);
 }
 
 /** Print REG: 00\n */
 static void moro8_print_register_word(const char *name, moro8_uword value, char **buf, size_t *size, size_t *written)
 {
-    MORO8_SNPRINTF(buf, size, written, "%s %02X\n", name, value);
+    moro8_snprintf(buf, size, written, "%s %02X\n", name, value);
 }
 
 /** Print REG: LL HH\n */
 static void moro8_print_register_dword(const char *name, moro8_udword value, char **buf, size_t *size, size_t *written)
 {
-
-    MORO8_SNPRINTF(buf, size, written, "%s %02X %02X\n", name, (moro8_uword)MORO8_LOW(value), (moro8_uword)MORO8_HIGH(value));
+    moro8_snprintf(buf, size, written, "%s %02X %02X\n", name, (moro8_uword)MORO8_LOW(value), (moro8_uword)MORO8_HIGH(value));
 }
 
 /** Print the whole memory as 0000: 00 00 00 00 ... 00 00 00 00 */
 static void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *size, size_t *written)
 {
+    moro8_udword address = 0;
+    moro8_udword i, j;
+
     if (!cpu->memory)
     {
         return;
     }
 
-    moro8_udword address = 0;
-    for (moro8_udword i = 0; i < MORO8_MEMORY_SIZE - 0x10; i += 0x10)
+    for (i = 0; i < MORO8_MEMORY_SIZE - 0x10; i += 0x10)
     {
         if (i > 0)
         {
@@ -1285,7 +1267,7 @@ static void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *size, s
         moro8_print_char(':', buf, size, written);
         moro8_print_char(' ', buf, size, written);
 
-        for (moro8_uword j = 0; j <= 0xF; ++j)
+        for (j = 0; j <= 0xF; ++j)
         {
             if (j > 0)
             {
@@ -1303,17 +1285,18 @@ static void moro8_print_memory(const moro8_cpu *cpu, char **buf, size_t *size, s
 MORO8_PUBLIC(size_t)
 moro8_print(const struct moro8_cpu *cpu, char *buf, size_t size)
 {
-    if (!buf || size < 1)
-    {
-        return -1;
-    }
-
     char *init_buf = buf;
     size_t init_size = size;
     size_t written = 0;
     size_t *written_ptr = &written;
     char **buf_ptr = &buf;
     size_t *size_ptr = &size;
+
+    if (!buf || size < 1)
+    {
+        return -1;
+    }
+
     moro8_print_register_dword("PC:", cpu->registers.pc, buf_ptr, size_ptr, written_ptr);
     moro8_print_register_word("AC:", cpu->registers.ac, buf_ptr, size_ptr, written_ptr);
     moro8_print_register_word("X: ", cpu->registers.x, buf_ptr, size_ptr, written_ptr);
@@ -1326,7 +1309,7 @@ moro8_print(const struct moro8_cpu *cpu, char *buf, size_t size)
     moro8_print_char('\n', buf_ptr, size_ptr, written_ptr);
     moro8_print_memory(cpu, buf_ptr, size_ptr, written_ptr);
 
-    // Same as snprintf
+    /* Same as snprintf */
     if (written < init_size)
     {
         init_buf[written] = '\0';
@@ -1377,11 +1360,13 @@ moro8_parse_hex(char value)
 MORO8_PUBLIC(size_t)
 moro8_parse_word(const char *buf, size_t size, moro8_uword *value)
 {
-    *value = 0;
     char c;
-    size_t read = 0;
-    size_t col = 0;
-    for (size_t i = 0; i < size && col < 2; ++i)
+    size_t read, col, i;
+    read = 0;
+    col = 0;
+
+    *value = 0;
+    for (i = 0; i < size && col < 2; ++i)
     {
         c = *buf;
         read++;
@@ -1417,11 +1402,12 @@ moro8_parse_word(const char *buf, size_t size, moro8_uword *value)
 MORO8_PUBLIC(size_t)
 moro8_parse_dword(const char *buf, size_t size, moro8_udword *value)
 {
-    *value = 0;
-    size_t read = 0;
-    size_t result;
+    size_t read, result, i;
     moro8_uword word;
-    for (size_t i = 0; i < 2; ++i)
+    read = 0;
+
+    *value = 0;
+    for (i = 0; i < 2; ++i)
     {
         if ((result = moro8_parse_word(buf, size, &word)) == 0)
         {
@@ -1438,7 +1424,7 @@ moro8_parse_dword(const char *buf, size_t size, moro8_udword *value)
 }
 
 /** Parse a HHLL hex string to double word */
-static inline int moro8_parse_address(const char *buf, moro8_udword *value)
+static int moro8_parse_address(const char *buf, moro8_udword *value)
 {
     if (!(MORO8_IS_HEX(buf[0]) && MORO8_IS_HEX(buf[1]) && MORO8_IS_HEX(buf[2]) && MORO8_IS_HEX(buf[3])))
     {
@@ -1459,37 +1445,42 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
 #define MORO8_SUBSTATE_REGISTER 0
 #define MORO8_SUBSTATE_SR 1
 #define MORO8_SUBSTATE_MEMORY 2
-
-    _moro8_reset(cpu);
-    // When reading status register
+    /* When reading status register */
     moro8_uword sr = 0;
     moro8_uword sr_flag = 0;
-    // Pointer to the moro8_uword we are reading
+    /* Pointer to the moro8_uword we are reading */
     moro8_uword *value_buffer = NULL;
-    // Used when reading memory values
+    /* Used when reading memory values */
     moro8_udword base_address = 0;
     moro8_udword address = 0;
     moro8_udword value = 0;
     size_t value_index = 0;
-    // State and substate
+    /* State and substate */
     int state = MORO8_STATE_IDLE;
     int substate = MORO8_SUBSTATE_REGISTER;
-    // Current character
+    /* Current character */
     char c = 0;
     size_t line = 1;
     size_t col = 1;
+    size_t i, j;
 
-    for (size_t i = 0; i < size;)
+    _moro8_reset(cpu);
+
+    for (i = 0; i < size;)
     {
         c = *buf;
 
-        // Consume whitespaces and newlines
+        /* Consume whitespaces and newlines */
         switch (c)
         {
         case '\0':
             return cpu;
         case '#':
             state = MORO8_STATE_COMMENT;
+            ++col;
+            ++i;
+            ++buf;
+            continue;
         case ' ':
         case '\t':
         case '\r':
@@ -1505,7 +1496,7 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
             ++buf;
             continue;
         default:
-            // Skip comments
+            /* Skip comments */
             if (state == MORO8_STATE_COMMENT)
             {
                 ++col;
@@ -1518,19 +1509,19 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
 
         if (state == MORO8_STATE_IDLE)
         {
-            // Idle state, search for label
+            /* Idle state, search for label */
             if (!MORO8_IS_LETTER_OR_HEX(c))
             {
-                printf("%zd.%zd: encountered invalid character %c\n", line, col, c);
+                printf("%lu.%lu: encountered invalid character %c\n", (unsigned long)line, (unsigned long)col, c);
                 return NULL;
             }
 
-            // Search for next : following the label
-            for (size_t j = 0; i < size; ++j, ++i)
+            /* Search for next : following the label */
+            for (j = 0; i < size; ++j, ++i)
             {
                 if (buf[j] == ':')
                 {
-                    // End of label
+                    /* End of label */
                     if (j == 4 && moro8_parse_address(buf, &base_address))
                     {
                         substate = MORO8_SUBSTATE_MEMORY;
@@ -1592,12 +1583,12 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
                     }
                     else
                     {
-                        // Unknown label
-                        printf("%zd.%zd: encountered unknown label %.*s\n", line, col + j, (int)j, buf);
+                        /* Unknown label */
+                        printf("%lu.%lu: encountered unknown label %.*s\n", (unsigned long)line, (unsigned long)(col + j), (int)j, buf);
                         return NULL;
                     }
 
-                    // Now go parse the value
+                    /* Now go parse the value */
                     ++i;
                     buf += j + 1;
                     col += j + 1;
@@ -1607,26 +1598,26 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
                 }
                 else if (!MORO8_IS_LETTER_OR_HEX(buf[j]))
                 {
-                    // Invalid character while parsing label
-                    printf("%zd.%zd: encountered invalid character %c\n", line, col + j, buf[j]);
+                    /* Invalid character while parsing label */
+                    printf("%lu.%lu: encountered invalid character %c\n", (unsigned long)line, (unsigned long)(col + j), buf[j]);
                     return NULL;
                 }
             }
 
             if (state == MORO8_STATE_IDLE)
             {
-                // Couldn't find next : character
-                printf("%zd.%zd: character : not found after label\n", line, col);
+                /* Couldn't find next : character */
+                printf("%lu.%lu: character : not found after label\n", (unsigned long)line, (unsigned long)col);
                 return NULL;
             }
         }
         else if (state == MORO8_STATE_VALUE)
         {
-            // Value state, fill memory
+            /* Value state, fill memory */
             if (!MORO8_IS_HEX(c))
             {
-                // Values are only 0-9A-F
-                printf("%zd.%zd: encountered invalid character %c\n", line, col, c);
+                /* Values are only 0-9A-F */
+                printf("%lu.%lu: encountered invalid character %c\n", (unsigned long)line, (unsigned long)col, c);
                 return NULL;
             }
 
@@ -1634,7 +1625,7 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
 
             if (value_buffer)
             {
-                // Storing in register
+                /* Storing in register */
                 if (value_index % 2 == 0)
                 {
                     value_buffer[(moro8_udword)value_index / 2] = (moro8_uword)value;
@@ -1646,13 +1637,13 @@ moro8_parse(moro8_cpu *cpu, const char *buf, size_t size)
 
                 if (substate == MORO8_SUBSTATE_SR)
                 {
-                    // Toggle corresponding flag in status register
+                    /* Toggle corresponding flag in status register */
                     MORO8_SET_SR((MORO8_SR & ~sr_flag) + (sr != 0 ? sr_flag : 0));
                 }
             }
             else if (cpu->memory)
             {
-                // Storing in memory
+                /* Storing in memory */
                 address = (moro8_udword)(base_address + value_index / 2);
                 cpu->memory->set_word(cpu->memory, address, cpu->memory->get_word(cpu->memory, address) + value);
             }
@@ -1778,6 +1769,8 @@ moro8_set_memory_dword(struct moro8_cpu *cpu, moro8_udword address, moro8_udword
 MORO8_PUBLIC(void)
 moro8_copy(moro8_cpu *snapshot, const moro8_cpu *cpu)
 {
+    moro8_udword i;
+
     memcpy(&snapshot->registers, &cpu->registers, sizeof(moro8_registers));
 
     if (!snapshot->memory || !cpu->memory)
@@ -1785,7 +1778,7 @@ moro8_copy(moro8_cpu *snapshot, const moro8_cpu *cpu)
         return;
     }
 
-    for (moro8_udword i = _MORO8_MAX_ADDR; i >= 0; --i)
+    for (i = _MORO8_MAX_ADDR;; --i)
     {
         snapshot->memory->set_word(snapshot->memory, i, cpu->memory->get_word(cpu->memory, i));
 
@@ -1799,6 +1792,8 @@ moro8_copy(moro8_cpu *snapshot, const moro8_cpu *cpu)
 MORO8_PUBLIC(int)
 moro8_equal(const moro8_cpu *left, const moro8_cpu *right)
 {
+    moro8_udword i;
+
     if (left == right)
     {
         return MORO8_TRUE;
@@ -1824,7 +1819,7 @@ moro8_equal(const moro8_cpu *left, const moro8_cpu *right)
         return MORO8_FALSE;
     }
 
-    for (moro8_udword i = _MORO8_MAX_ADDR; i >= 0; --i)
+    for (i = _MORO8_MAX_ADDR;; --i)
     {
         if (left->memory->get_word(left->memory, i) != right->memory->get_word(right->memory, i))
         {

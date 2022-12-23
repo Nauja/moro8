@@ -57,7 +57,7 @@ foreach(_TEST ${_TESTS})
             ${CMAKE_BINARY_DIR}
             ${CMOCKA_BINARY_DIR}
             ${LIBFS_BINARY_DIR})
-
+    
     # Link cmocka and libfs
     add_dependencies(moro8-${_TEST} cmocka libfs)
 

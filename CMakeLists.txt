@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.3)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
  
+if (MSVC)
+list(APPEND MORO8_COMPILE_FLAGS /W4 /WX)
+else()
+list(APPEND MORO8_COMPILE_FLAGS -Wall -Wextra -pedantic -Werror)
+endif()
+
 # Specify search path for CMake modules to be loaded by include() 
 # and find_package()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
@@ -86,9 +96,12 @@ file(GLOB HEADERS moro8.h)
 set(SOURCES moro8.c)
 
 add_library("${MORO8_LIB}" SHARED "${HEADERS}" "${SOURCES}")
+set_target_properties(${MORO8_LIB} PROPERTIES
+        C_STANDARD 90)
+
 target_compile_options("${MORO8_LIB}"
                         PRIVATE
-                            ${DEFAULT_C_COMPILE_FLAGS}
+                            ${MORO8_COMPILE_FLAGS}
                             -DHAVE_CONFIG_H
                             -DMORO8_WITH_CLI=Off)
                                
@@ -102,12 +115,14 @@ if (MORO8_STATIC)
     set(MORO8_STATIC_LIB "${MORO8_LIB}-static")
 
     add_library(${MORO8_STATIC_LIB} STATIC "${HEADERS}" "${SOURCES}")
-    set_target_properties(${MORO8_STATIC_LIB} PROPERTIES OUTPUT_NAME "${MORO8_LIB}")
-    set_target_properties(${MORO8_STATIC_LIB} PROPERTIES PREFIX "")
+    set_target_properties(${MORO8_STATIC_LIB} PROPERTIES
+            C_STANDARD 90
+            OUTPUT_NAME "${MORO8_LIB}"
+            PREFIX "")
 
     target_compile_options(${MORO8_STATIC_LIB}
                            PRIVATE
-                               ${DEFAULT_C_COMPILE_FLAGS}
+                               ${MORO8_COMPILE_FLAGS}
                                -DHAVE_CONFIG_H
                                -DMORO8_HIDE_SYMBOLS)
                                
@@ -158,7 +173,7 @@ if (MORO8_WITH_CLI AND NOT MORO8_MINIMALIST)
             
     target_compile_options(${MORO8_CLI}
                            PRIVATE
-                               ${DEFAULT_C_COMPILE_FLAGS}
+                               ${MORO8_COMPILE_FLAGS}
                                -DLIBFS_STATIC=On)
 
     target_link_libraries(${MORO8_CLI} PRIVATE ${LIBFS_LIBRARY} ${MORO8_STATIC_LIB})
@@ -171,7 +186,9 @@ if (MORO8_WITH_CLI AND NOT MORO8_MINIMALIST)
     # Link libfs
     add_dependencies(${MORO8_CLI} libfs)
 
-    set_target_properties(${MORO8_CLI} PROPERTIES RUNTIME_OUTPUT_NAME moro8)
+    set_target_properties(${MORO8_CLI} PROPERTIES
+            C_STANDARD 90
+            RUNTIME_OUTPUT_NAME moro8)
 
 endif(MORO8_WITH_CLI AND NOT MORO8_MINIMALIST)
 
